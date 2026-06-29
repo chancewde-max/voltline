@@ -82,9 +82,9 @@
   .games-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; font-family: 'Space Mono', monospace; font-size: 11px; color: #4a5a7a; }
   .games-empty { display: flex; align-items: center; justify-content: center; padding: 40px; font-family: 'Space Mono', monospace; font-size: 11px; color: #4a5a7a; }
 
-  /* bet slip bar */
-  .bet-slip-bar { display: none; align-items: center; justify-content: space-between; padding: 10px 18px; background: rgba(0,240,245,.06); border-top: 1px solid rgba(0,240,245,.18); cursor: pointer; -webkit-tap-highlight-color: transparent; position: absolute; left: 0; right: 0; z-index: 5; }
-  .bet-slip-bar.parlay { background: rgba(123,92,255,.08); border-top-color: rgba(123,92,255,.3); }
+  /* bet slip bar — fixed above ticker (ticker=27px, nav=74px, so bottom=101px) */
+  .bet-slip-bar { display: none; align-items: center; justify-content: space-between; padding: 10px 18px; background: #030310; border-top: 1px solid rgba(0,240,245,.25); cursor: pointer; -webkit-tap-highlight-color: transparent; position: absolute; left: 0; right: 0; bottom: 101px; z-index: 6; }
+  .bet-slip-bar.parlay { border-top-color: rgba(123,92,255,.4); }
   .bet-slip-bar.show { display: flex; }
   .slip-bar-left { display: flex; align-items: center; gap: 10px; }
   .slip-badge { width: 22px; height: 22px; border-radius: 11px; background: #00f0f5; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: #030310; }
@@ -92,8 +92,8 @@
   .slip-bar-label { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .08em; color: #eef2ff; }
   .slip-bar-cta { font-family: 'Space Mono', monospace; font-size: 10px; color: #00f0f5; }
 
-  /* ticker */
-  .ticker-bar { position: absolute; left: 0; right: 0; height: 27px; background: rgba(0,0,8,.97); border-top: 1px solid rgba(0,240,245,.2); overflow: hidden; display: flex; align-items: center; z-index: 4; }
+  /* ticker — always at bottom: 74px (above nav), never moves */
+  .ticker-bar { position: absolute; left: 0; right: 0; bottom: 74px; height: 27px; background: rgba(0,0,8,.97); border-top: 1px solid rgba(0,240,245,.2); overflow: hidden; display: flex; align-items: center; z-index: 4; }
   .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 22s linear infinite; }
   .ticker-item { font-family: 'Space Mono', monospace; font-size: 9px; padding: 0 16px; }
   .ticker-item.hot { color: #00f0f5; }
@@ -319,6 +319,7 @@
           <div class="sheet-head-left">
             <span class="sheet-title">BET SLIP</span>
             <div class="type-badge" id="slip-type-badge">STRAIGHT</div>
+            <span id="slip-combined-odds" style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#00f0f5"></span>
           </div>
           <span class="sheet-close" onclick="closeSlip()">✕</span>
         </div>
@@ -646,9 +647,6 @@ function updateSlipBar() {
 
   if (n === 0) {
     bar.classList.remove('show', 'parlay');
-    // Reposition ticker/nav
-    document.getElementById('ticker-bar').style.bottom = '74px';
-    document.getElementById('home-nav').style.bottom   = '0';
     return;
   }
 
@@ -657,13 +655,6 @@ function updateSlipBar() {
   badge.className   = 'slip-badge' + (isParlay ? ' parlay' : '');
   label.textContent = isParlay ? 'PARLAY' : 'STRAIGHT BET';
   if (isParlay) bar.classList.add('parlay'); else bar.classList.remove('parlay');
-
-  // Push ticker + nav down to make room for slip bar
-  const barH = bar.offsetHeight || 42;
-  document.getElementById('ticker-bar').style.bottom = (74 + barH) + 'px';
-  document.getElementById('home-nav').style.bottom   = '0';
-  // Position bet slip bar just above ticker
-  bar.style.bottom = '101px';
 }
 
 function openSlip() {
@@ -682,11 +673,25 @@ function closeSlipIfOverlay(e) {
   if (e.target === document.getElementById('slip-modal')) closeSlip();
 }
 
+function calcCombinedOdds(bets) {
+  if (bets.length === 0) return '';
+  if (bets.length === 1) return bets[0].odds;
+  const dec = bets.reduce((acc, b) => {
+    const o = parseInt(b.odds);
+    return acc * (o > 0 ? 1 + o / 100 : 1 + 100 / Math.abs(o));
+  }, 1);
+  const profit = (dec - 1) * 100;
+  return dec >= 2 ? `+${Math.round(profit)}` : `-${Math.round(10000 / profit)}`;
+}
+
 function renderSlipModal() {
   const n = state.betSlip.length;
   const isParlay = n >= 2;
+  const combinedOdds = calcCombinedOdds(state.betSlip);
   document.getElementById('slip-type-badge').textContent = isParlay ? 'PARLAY' : 'STRAIGHT';
   document.getElementById('slip-type-badge').className   = 'type-badge' + (isParlay ? ' parlay' : '');
+  const oddsEl = document.getElementById('slip-combined-odds');
+  if (oddsEl) { oddsEl.textContent = combinedOdds; oddsEl.style.color = isParlay ? '#a78bff' : '#00f0f5'; }
   document.querySelector('#slip-modal .place-btn').textContent = 'PLACE ' + (isParlay ? 'PARLAY' : 'BET');
 
   document.getElementById('slip-bets').innerHTML = state.betSlip.map(b => `

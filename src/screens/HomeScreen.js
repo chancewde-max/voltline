@@ -85,6 +85,17 @@ const FALLBACK = {
   ],
 };
 
+function calcCombinedOdds(bets) {
+  if (bets.length === 0) return '';
+  if (bets.length === 1) return bets[0].odds;
+  const dec = bets.reduce((acc, b) => {
+    const o = parseInt(b.odds);
+    return acc * (o > 0 ? 1 + o / 100 : 1 + 100 / Math.abs(o));
+  }, 1);
+  const profit = (dec - 1) * 100;
+  return dec >= 2 ? `+${Math.round(profit)}` : `-${Math.round(10000 / profit)}`;
+}
+
 function calcPayout(stakeAmt, bets) {
   if (!stakeAmt || bets.length === 0) return 0;
   if (bets.length === 1) {
@@ -152,9 +163,10 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
     Animated.timing(slipAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setSlipOpen(false));
   };
 
-  const stakeNum = parseFloat(stake) || 0;
-  const payout   = calcPayout(stakeNum, betSlip);
-  const canPlace  = stakeNum > 0 && stakeNum <= promoCash;
+  const stakeNum     = parseFloat(stake) || 0;
+  const payout       = calcPayout(stakeNum, betSlip);
+  const canPlace     = stakeNum > 0 && stakeNum <= promoCash;
+  const combinedOdds = calcCombinedOdds(betSlip);
 
   const liveCount = games.filter(g => g.isLive).length;
   const isParlay  = betSlip.length >= 2;
@@ -212,7 +224,7 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
         <View style={{ height: 16 }} />
       </ScrollView>
 
-      {/* Bet slip bar — above ticker */}
+      {/* Bet slip bar — overlays above ticker */}
       {betSlip.length > 0 && (
         <TouchableOpacity style={[s.slipBar, isParlay && s.slipBarParlay]} onPress={openSlip} activeOpacity={0.85}>
           <View style={s.slipLeft}>
@@ -243,6 +255,7 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
                 <View style={[s.typeBadge, isParlay && s.typeBadgeParlay]}>
                   <Text style={[s.typeTxt, isParlay && s.typeTxtParlay]}>{isParlay ? 'PARLAY' : 'STRAIGHT'}</Text>
                 </View>
+                <Text style={[s.combinedOdds, isParlay && s.combinedOddsParlay]}>{combinedOdds}</Text>
               </View>
               <TouchableOpacity onPress={closeSlip} style={{ padding: 4 }}>
                 <Text style={s.closeX}>✕</Text>
@@ -420,8 +433,8 @@ const s = StyleSheet.create({
   oddsTxt:         { fontFamily: F.monoBd, fontSize: 9, color: C.white },
   oddsTxtSel:      { color: C.cyan },
 
-  slipBar:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(0,240,245,0.06)', borderTopWidth: 1, borderTopColor: 'rgba(0,240,245,0.18)' },
-  slipBarParlay:   { backgroundColor: 'rgba(123,92,255,0.08)', borderTopColor: 'rgba(123,92,255,0.3)' },
+  slipBar:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 10, backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: 'rgba(0,240,245,0.25)' },
+  slipBarParlay:   { borderTopColor: 'rgba(123,92,255,0.4)' },
   slipLeft:        { flexDirection: 'row', alignItems: 'center', gap: 10 },
   slipBadge:       { width: 22, height: 22, borderRadius: 11, backgroundColor: C.cyan, alignItems: 'center', justifyContent: 'center' },
   slipBadgeParlay: { backgroundColor: '#7b5cff' },
@@ -439,6 +452,8 @@ const s = StyleSheet.create({
   typeBadgeParlay: { backgroundColor: 'rgba(123,92,255,0.15)', borderColor: 'rgba(123,92,255,0.4)' },
   typeTxt:         { fontFamily: F.monoBd, fontSize: 9, color: C.dim, letterSpacing: 0.6 },
   typeTxtParlay:   { color: '#a78bff' },
+  combinedOdds:    { fontFamily: F.monoBd, fontSize: 14, color: C.cyan },
+  combinedOddsParlay: { color: '#a78bff' },
   closeX:          { fontFamily: F.grotesk, fontSize: 16, color: C.dim },
   slipRow:         { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', gap: 10 },
   slipBetTeam:     { fontFamily: F.groteskSm, fontSize: 13, color: C.white },
