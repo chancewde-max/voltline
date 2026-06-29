@@ -360,6 +360,7 @@
     <div class="sport-tabs" id="sport-tabs">
       <div class="sport-tab active" onclick="switchSport(this,'NBA')">NBA</div>
       <div class="sport-tab" onclick="switchSport(this,'NFL')">NFL</div>
+      <div class="sport-tab" onclick="switchSport(this,'MLB')">MLB</div>
       <div class="sport-tab" onclick="switchSport(this,'Soccer')">Soccer</div>
       <div class="sport-tab" onclick="switchSport(this,'NHL')">NHL</div>
       <div class="sport-tab" onclick="switchSport(this,'Tennis')">Tennis</div>
@@ -651,6 +652,7 @@ const STATUS_MAP = {
 const ESPN_URLS = {
   NBA:         'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
   NFL:         'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+  MLB:         'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
   Soccer:      'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
   NHL:         'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
   UFC:         'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
@@ -659,6 +661,11 @@ const ESPN_URLS = {
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 const FALLBACK_GAMES = {
+  MLB: [
+    { id:'ml1', sport:'MLB', period:'● T7',  isLive:true,  isFinal:false, teams:[{abbr:'NYY',score:'3',lead:true},{abbr:'BOS',score:'1',lead:false}], awayOdds:'-155', homeOdds:'+132' },
+    { id:'ml2', sport:'MLB', period:'7:10 PM',isLive:false, isFinal:false, teams:[{abbr:'LAD',score:'—',lead:false},{abbr:'SF', score:'—',lead:false}], awayOdds:'-175', homeOdds:'+148' },
+    { id:'ml3', sport:'MLB', period:'8:05 PM',isLive:false, isFinal:false, teams:[{abbr:'ATL',score:'—',lead:false},{abbr:'MIA',score:'—',lead:false}], awayOdds:'-130', homeOdds:'+110' },
+  ],
   Tennis: [
     { id:'t1', sport:'Tennis', period:'● Set 2', isLive:true,  teams:[{abbr:'DJO',score:'6',lead:true},{abbr:'ALC',score:'4',lead:false}], awayOdds:'-155', homeOdds:'+130' },
     { id:'t2', sport:'Tennis', period:'Final',   isLive:false, teams:[{abbr:'SIN',score:'3',lead:false},{abbr:'MED',score:'3',lead:false}], awayOdds:'+110', homeOdds:'-125' }
@@ -702,6 +709,7 @@ function parseESPN(data, sport) {
       if (sport === 'NBA' || sport === 'NFL') periodStr = `● Q${period} ${clock}`;
       else if (sport === 'Soccer' || sport === 'World Cup') periodStr = `● ${clock}'`;
       else if (sport === 'NHL') periodStr = `● P${period} ${clock}`;
+      else if (sport === 'MLB') periodStr = `● T${period}`;
       else periodStr = '● LIVE';
     } else if (isFinal) { periodStr = 'Final'; }
     else {
@@ -1143,6 +1151,7 @@ function renderBets() {
 const SPORT_ESPN_URLS = {
   NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
   NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+  MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
   Soccer: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
   NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
   UFC: 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
@@ -1189,6 +1198,7 @@ setInterval(resolveOutcomes, 60000);
 const TICKER_URLS = [
   { url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',    sport: 'NBA' },
   { url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',     sport: 'NFL' },
+  { url: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',     sport: 'MLB' },
   { url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',       sport: 'NHL' },
   { url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',     sport: 'MLS' },
   { url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',sport: 'WC'  },

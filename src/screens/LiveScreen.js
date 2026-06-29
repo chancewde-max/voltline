@@ -11,7 +11,7 @@ import Ticker from '../components/Ticker';
 import BetSlip from '../components/BetSlip';
 import GameCard from '../components/GameCard';
 
-const SPORTS = ['NBA', 'NFL', 'Soccer', 'NHL', 'Tennis', 'UFC', 'Boxing', 'World Cup'];
+const SPORTS = ['NBA', 'NFL', 'MLB', 'Soccer', 'NHL', 'Tennis', 'UFC', 'Boxing', 'World Cup'];
 const CARD_W = (SCREEN_W - 36 - 8) / 2;
 
 export default function LiveScreen({ promoCash, gameTime, navigate, betSlip, onAddBet, onPlaceBet }) {

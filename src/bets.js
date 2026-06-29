@@ -6,6 +6,7 @@ export const ESPN_URLS = {
   NFL:         'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
   Soccer:      'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
   NHL:         'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+  MLB:         'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
   UFC:         'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
   'World Cup': 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
 };
@@ -44,6 +45,7 @@ export function parseESPN(data, sport) {
         else if (sport === 'NFL') periodStr = `● Q${period} ${clock}`;
         else if (sport === 'Soccer' || sport === 'World Cup') periodStr = `● ${clock}'`;
         else if (sport === 'NHL') periodStr = `● P${period} ${clock}`;
+        else if (sport === 'MLB') periodStr = `● T${period}`;
         else periodStr = '● LIVE';
       } else if (isFinal) {
         periodStr = 'Final';
@@ -74,6 +76,11 @@ export function parseESPN(data, sport) {
 }
 
 export const FALLBACK = {
+  MLB: [
+    { id: 'ml1', sport: 'MLB', period: '● T7', isLive: true,  isFinal: false, teams: [{ abbr: 'NYY', score: '3', leading: true  }, { abbr: 'BOS', score: '1', leading: false }], awayOdds: '-155', homeOdds: '+132' },
+    { id: 'ml2', sport: 'MLB', period: '7:10 PM', isLive: false, isFinal: false, teams: [{ abbr: 'LAD', score: '—', leading: false }, { abbr: 'SF',  score: '—', leading: false }], awayOdds: '-175', homeOdds: '+148' },
+    { id: 'ml3', sport: 'MLB', period: '8:05 PM', isLive: false, isFinal: false, teams: [{ abbr: 'ATL', score: '—', leading: false }, { abbr: 'MIA', score: '—', leading: false }], awayOdds: '-130', homeOdds: '+110' },
+  ],
   NBA: [
     { id: 'nb1', sport: 'NBA', period: '8:00 PM', isLive: false, isFinal: false, teams: [{ abbr: 'BOS', score: '—', leading: false }, { abbr: 'NYK', score: '—', leading: false }], awayOdds: '-140', homeOdds: '+118' },
     { id: 'nb2', sport: 'NBA', period: '10:30 PM', isLive: false, isFinal: false, teams: [{ abbr: 'LAL', score: '—', leading: false }, { abbr: 'GSW', score: '—', leading: false }], awayOdds: '+105', homeOdds: '-125' },

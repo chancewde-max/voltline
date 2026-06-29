@@ -5,6 +5,7 @@ import { C, F } from '../constants';
 const LIVE_URLS = [
   { url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',   sport: 'NBA' },
   { url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',    sport: 'NFL' },
+  { url: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',    sport: 'MLB' },
   { url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',      sport: 'NHL' },
   { url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',    sport: 'MLS' },
   { url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard', sport: 'WC' },
@@ -31,6 +32,7 @@ function buildTickerItems(events) {
     if (isLive) {
       if (sport === 'NBA' || sport === 'NFL') periodStr = `Q${period} ${clock}`;
       else if (sport === 'NHL')               periodStr = `P${period} ${clock}`;
+      else if (sport === 'MLB')               periodStr = `T${period}`;
       else                                    periodStr = `${clock}'`;
     } else {
       periodStr = 'Final';
