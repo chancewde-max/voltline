@@ -28,7 +28,6 @@ export function parseESPN(data, sport) {
   const now = Date.now();
   return (data.events || [])
     .filter(ev => Math.abs(new Date(ev.date).getTime() - now) <= SEVEN_DAYS)
-    .slice(0, 8)
     .map(ev => {
       const comp = ev.competitions?.[0];
       const comps = comp?.competitors || [];
@@ -63,6 +62,7 @@ export function parseESPN(data, sport) {
         id: ev.id,
         sport,
         period: periodStr,
+        date: ev.date,
         isLive,
         isFinal,
         teams: [

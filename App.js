@@ -14,6 +14,7 @@ import { SpaceMono_400Regular, SpaceMono_700Bold } from '@expo-google-fonts/spac
 
 import ForYouScreen from './src/screens/ForYouScreen';
 import LiveScreen from './src/screens/LiveScreen';
+import CasinoScreen from './src/screens/CasinoScreen';
 import AccountScreen from './src/screens/AccountScreen';
 import BetsScreen from './src/screens/BetsScreen';
 import { pad2 } from './src/constants';
@@ -97,7 +98,7 @@ export default function App() {
   // ── Navigation ──
   // Screens are horizontal layers; navigating slides everything left of the
   // destination off-screen (-W), the destination to 0, and the rest to +W.
-  const ORDER = ['home', 'live', 'bets', 'account'];
+  const ORDER = ['home', 'live', 'casino', 'bets', 'account'];
   const layers = useRef(
     ORDER.reduce((acc, key, i) => { acc[key] = new Animated.Value(i === 0 ? 0 : W); return acc; }, {})
   ).current;
@@ -178,6 +179,10 @@ export default function App() {
             onAddBet={addBet}
             onPlaceBet={placeBet}
           />
+        </Animated.View>
+
+        <Animated.View style={[styles.layer, styles.overlay, { transform: [{ translateX: layers.casino }] }]}>
+          <CasinoScreen navigate={navigate} gameTime={gameTime} />
         </Animated.View>
 
         <Animated.View style={[styles.layer, styles.overlay, { transform: [{ translateX: layers.bets }] }]}>
