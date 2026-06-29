@@ -42,6 +42,7 @@ export default function App() {
   const [gems,         setGems]         = useState(1250);
   const [selectedPack, setSelectedPack] = useState('p2');
   const [friends,      setFriends]      = useState(INITIAL_FRIENDS);
+  const [betSlip,      setBetSlip]      = useState([]);
 
   // ── Live clock ──
   const [min, setMin] = useState(2);
@@ -80,6 +81,13 @@ export default function App() {
     setPromoCash(p => p + pack.price);
   };
 
+  const addBet = (bet) => {
+    setBetSlip(prev => {
+      const exists = prev.find(b => b.id === bet.id);
+      return exists ? prev.filter(b => b.id !== bet.id) : [...prev, bet];
+    });
+  };
+
   const handleAddFriend = (raw) => {
     const name     = raw.charAt(0).toUpperCase() + raw.slice(1);
     const initials = name.slice(0, 2).toUpperCase();
@@ -101,6 +109,8 @@ export default function App() {
             bosOdds={bosOdds}
             gameTime={gameTime}
             navigate={navigate}
+            betSlip={betSlip}
+            onAddBet={addBet}
           />
         </Animated.View>
 

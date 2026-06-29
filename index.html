@@ -9,626 +9,191 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   ::-webkit-scrollbar { width: 0; height: 0; }
+  html, body { height: 100%; background: #020209; font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; }
+  body { display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+  #app { width: 375px; min-height: 100vh; position: relative; overflow: hidden; background: #030310; }
+  @media (max-width: 375px) { #app { width: 100%; } }
 
-  html, body {
-    height: 100%;
-    background: #020209;
-    font-family: 'Space Grotesk', sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-  }
-
-  #app {
-    width: 375px;
-    min-height: 100vh;
-    position: relative;
-    overflow: hidden;
-    background: #030310;
-  }
-
-  @media (max-width: 375px) {
-    #app { width: 100%; }
-  }
-
-  /* ── Screens ── */
-  .screen {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    background: #030310;
-    transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease;
-    will-change: transform, opacity;
-  }
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: #030310; transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease; will-change: transform, opacity; }
   .screen.hidden-left  { transform: translateX(-100%); opacity: 0; pointer-events: none; }
   .screen.hidden-right { transform: translateX(100%);  opacity: 0; pointer-events: none; }
 
-  /* ── Status bar ── */
-  .status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 20px 4px;
-    flex-shrink: 0;
-  }
-  .status-time {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    font-weight: 700;
-    color: #eef2ff;
-  }
+  .status-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px 4px; flex-shrink: 0; }
+  .status-time { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: #eef2ff; }
   .status-icons { display: flex; align-items: center; gap: 5px; }
-  .status-5g {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    color: #eef2ff;
-    opacity: .8;
-  }
+  .status-5g { font-family: 'Space Mono', monospace; font-size: 10px; color: #eef2ff; opacity: .8; }
 
-  /* ── Bottom nav ── */
-  .bottom-nav {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    display: flex;
-    background: #030310;
-    border-top: 1px solid rgba(255,255,255,.07);
-    padding: 12px 0 26px;
-    z-index: 10;
-  }
-  .nav-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .nav-label {
-    font-size: 9px;
-    color: #3d4e6e;
-  }
+  .bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; display: flex; background: #030310; border-top: 1px solid rgba(255,255,255,.07); padding: 12px 0 26px; z-index: 10; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .nav-label { font-size: 9px; color: #3d4e6e; }
   .nav-item.active .nav-label { color: #00f0f5; font-weight: 600; }
 
-  /* ── Animations ── */
   @keyframes live-dot   { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.7);opacity:.4} }
-  @keyframes frame-in   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
   @keyframes ticker-scroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-  @keyframes buy-flash  { 0%{opacity:0;transform:translateY(6px)} 15%{opacity:1;transform:translateY(0)} 85%{opacity:1} 100%{opacity:0;transform:translateY(-6px)} }
+  @keyframes buy-flash  { 0%{opacity:0;transform:translateY(6px)} 15%{opacity:1;transform:translateY(0)} 85%{opacity:1} 100%{opacity:0} }
   @keyframes slide-in   { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes toast-out  { 0%{opacity:1} 100%{opacity:0;transform:translateY(-6px)} }
+  @keyframes sheet-up   { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  @keyframes spin       { to{transform:rotate(360deg)} }
 
-  /* ── HOME screen ── */
-  .home-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 18px 12px;
-    flex-shrink: 0;
-  }
-  .brand {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: .05em;
-    color: #eef2ff;
-  }
+  /* HOME */
+  .home-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 18px 12px; flex-shrink: 0; }
+  .brand { font-family: 'Rajdhani', sans-serif; font-size: 21px; font-weight: 700; letter-spacing: .05em; color: #eef2ff; }
   .brand span { color: #00f0f5; }
   .header-right { display: flex; align-items: center; gap: 10px; }
-  .balance-label {
-    font-size: 9px;
-    color: #3d4e6e;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    text-align: right;
-  }
-  .balance-amount {
-    font-family: 'Space Mono', monospace;
-    font-size: 15px;
-    font-weight: 700;
-    color: #00f0f5;
-    text-shadow: 0 0 16px rgba(0,240,245,.4);
-  }
-  .avatar {
-    width: 34px; height: 34px;
-    background: linear-gradient(135deg,#00c0c8,#0050ff);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; flex-shrink: 0;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 11px; font-weight: 700; color: white;
-  }
+  .balance-label { font-size: 9px; color: #3d4e6e; text-transform: uppercase; letter-spacing: .08em; text-align: right; }
+  .balance-amount { font-family: 'Space Mono', monospace; font-size: 15px; font-weight: 700; color: #00f0f5; text-shadow: 0 0 16px rgba(0,240,245,.4); }
+  .avatar { width: 34px; height: 34px; background: linear-gradient(135deg,#00c0c8,#0050ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; color: white; }
 
-  /* sport tabs */
-  .sport-tabs {
-    display: flex;
-    padding: 0 0 0 18px;
-    border-bottom: 1px solid rgba(255,255,255,.06);
-    flex-shrink: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .sport-tab {
-    padding: 9px 12px;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    flex-shrink: 0;
-    font-size: 12px;
-    font-weight: 500;
-    color: #3d4e6e;
-    transition: color .15s, border-color .15s;
-  }
+  .sport-tabs { display: flex; padding: 0 0 0 18px; border-bottom: 1px solid rgba(255,255,255,.06); flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+  .sport-tab { padding: 9px 12px; border-bottom: 2px solid transparent; cursor: pointer; flex-shrink: 0; font-size: 12px; font-weight: 500; color: #3d4e6e; transition: color .15s, border-color .15s; -webkit-tap-highlight-color: transparent; }
   .sport-tab:first-child { padding-left: 0; margin-right: 10px; }
   .sport-tab.active { border-bottom-color: #00f0f5; color: #00f0f5; font-weight: 700; }
 
-  /* live section */
-  .live-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 18px 10px;
-    flex-shrink: 0;
-  }
+  .live-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px 10px; flex-shrink: 0; }
   .live-left { display: flex; align-items: center; gap: 8px; }
-  .live-dot {
-    width: 6px; height: 6px;
-    background: #ff2952;
-    border-radius: 50%;
-    animation: live-dot 1s ease-in-out infinite;
-    flex-shrink: 0;
-  }
-  .live-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 14px; font-weight: 700;
-    letter-spacing: .1em; color: #eef2ff;
-    text-transform: uppercase;
-  }
+  .live-dot { width: 6px; height: 6px; background: #ff2952; border-radius: 50%; animation: live-dot 1s ease-in-out infinite; flex-shrink: 0; }
+  .live-title { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .1em; color: #eef2ff; text-transform: uppercase; }
   .live-count { font-family: 'Space Mono', monospace; font-size: 10px; color: #ff2952; }
   .see-all { font-size: 11px; color: #00f0f5; cursor: pointer; }
 
-  /* game cards */
-  .game-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    padding: 0 18px 12px;
-    flex-shrink: 0;
-  }
-  .game-card {
-    border-radius: 13px;
-    padding: 12px;
-    cursor: pointer;
-    border: 1px solid rgba(255,255,255,.07);
-    background: rgba(10,10,26,1);
-    animation: slide-in .4s ease-out both;
-  }
-  .game-card.featured {
-    background: linear-gradient(145deg,#0e0e30,#101240);
-    border-color: rgba(0,240,245,.28);
-  }
-  .game-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
+  .games-area { flex: 1; overflow-y: auto; }
+  .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 18px 12px; }
+  .game-card { border-radius: 13px; padding: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,.07); background: rgba(10,10,26,1); animation: slide-in .4s ease-out both; }
+  .game-card.featured { background: linear-gradient(145deg,#0e0e30,#101240); border-color: rgba(0,240,245,.28); }
+  .game-card.in-slip  { border-color: #ffb02e; background: rgba(255,176,46,.04); }
+  .game-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .game-period { font-family: 'Space Mono', monospace; font-size: 8px; color: #ff2952; letter-spacing: .08em; }
+  .game-period.dim { color: #4a5a7a; }
   .game-sport  { font-family: 'Space Mono', monospace; font-size: 8px; color: #4a5a7a; }
-  .game-teams  { margin-bottom: 6px; }
-  .game-team-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 3px;
-  }
+  .game-team-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .game-team-row:last-child { margin-bottom: 0; }
   .team-abbr { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #b0bcd8; }
   .team-abbr.leading { color: #eef2ff; }
-  .team-abbr.featured-leader { color: #00f0f5; }
-  .team-score { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; color: #b0bcd8; }
+  .team-abbr.feat { color: #00f0f5; }
+  .team-right { display: flex; align-items: center; gap: 5px; }
+  .team-score { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: #b0bcd8; }
   .team-score.leading { color: #eef2ff; }
-  .team-score.featured-leader { color: #00f0f5; text-shadow: 0 0 10px rgba(0,240,245,.5); }
-  .game-odds {
-    padding: 5px 8px;
-    background: rgba(255,255,255,.05);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 6px;
-    text-align: center;
-    cursor: pointer;
-  }
-  .game-odds.featured { background: rgba(0,240,245,.12); border-color: rgba(0,240,245,.22); }
-  .odds-text { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: #eef2ff; }
-  .odds-text.featured { color: #00f0f5; }
+  .team-score.feat { color: #00f0f5; text-shadow: 0 0 10px rgba(0,240,245,.5); }
+  .odds-btn { padding: 3px 5px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 5px; font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; color: #eef2ff; cursor: pointer; transition: background .12s, border-color .12s, color .12s; flex-shrink: 0; }
+  .odds-btn.sel { background: rgba(0,240,245,.18); border-color: #00f0f5; color: #00f0f5; }
 
-  /* active bets */
-  .active-bets {
-    margin: 0 18px;
-    background: rgba(0,240,245,.04);
-    border: 1px solid rgba(0,240,245,.14);
-    border-radius: 13px;
-    padding: 14px 16px;
-    flex-shrink: 0;
-  }
-  .bets-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .bets-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 14px; font-weight: 700;
-    letter-spacing: .08em; color: #eef2ff;
-    text-transform: uppercase;
-  }
-  .bets-meta { display: flex; align-items: center; gap: 7px; }
-  .bets-today { font-family: 'Space Mono', monospace; font-size: 10px; color: #00e676; }
-  .bets-open {
-    padding: 2px 8px;
-    background: rgba(0,240,245,.12);
-    border-radius: 4px;
-    font-family: 'Space Mono', monospace;
-    font-size: 9px; color: #00f0f5;
-  }
-  .bet-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 7px 0;
-    border-bottom: 1px solid rgba(255,255,255,.05);
-  }
-  .bet-row:last-child { padding-bottom: 0; border-bottom: none; }
-  .bet-name { font-size: 12px; font-weight: 600; color: #c0cae0; }
-  .bet-detail { font-family: 'Space Mono', monospace; font-size: 10px; color: #3d4e6e; margin-top: 1px; }
-  .bet-result-win  { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: #00e676; }
-  .bet-result-lose { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: #ff2952; }
-  .bet-status { font-family: 'Space Mono', monospace; font-size: 9px; color: #3d4e6e; }
+  /* spinner */
+  .spinner { width: 24px; height: 24px; border: 2px solid rgba(0,240,245,.2); border-top-color: #00f0f5; border-radius: 50%; animation: spin .7s linear infinite; }
+  .games-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; font-family: 'Space Mono', monospace; font-size: 11px; color: #4a5a7a; }
+  .games-empty { display: flex; align-items: center; justify-content: center; padding: 40px; font-family: 'Space Mono', monospace; font-size: 11px; color: #4a5a7a; }
+
+  /* bet slip bar */
+  .bet-slip-bar { display: none; align-items: center; justify-content: space-between; padding: 10px 18px; background: rgba(0,240,245,.06); border-top: 1px solid rgba(0,240,245,.18); cursor: pointer; -webkit-tap-highlight-color: transparent; position: absolute; left: 0; right: 0; z-index: 5; }
+  .bet-slip-bar.parlay { background: rgba(123,92,255,.08); border-top-color: rgba(123,92,255,.3); }
+  .bet-slip-bar.show { display: flex; }
+  .slip-bar-left { display: flex; align-items: center; gap: 10px; }
+  .slip-badge { width: 22px; height: 22px; border-radius: 11px; background: #00f0f5; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: #030310; }
+  .slip-badge.parlay { background: #7b5cff; }
+  .slip-bar-label { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .08em; color: #eef2ff; }
+  .slip-bar-cta { font-family: 'Space Mono', monospace; font-size: 10px; color: #00f0f5; }
 
   /* ticker */
-  .ticker-bar {
-    position: absolute;
-    bottom: 74px; left: 0; right: 0;
-    height: 27px;
-    background: rgba(0,0,8,.97);
-    border-top: 1px solid rgba(0,240,245,.2);
-    overflow: hidden;
-    display: flex; align-items: center;
-    z-index: 2;
-  }
-  .ticker-track {
-    display: flex;
-    white-space: nowrap;
-    animation: ticker-scroll 22s linear infinite;
-  }
-  .ticker-item {
-    font-family: 'Space Mono', monospace;
-    font-size: 9px;
-    padding: 0 16px;
-  }
-  .ticker-item.hot  { color: #00f0f5; }
-  .ticker-item.dim  { color: #4a5a7a; }
-  .ticker-item.win  { color: #00e676; }
+  .ticker-bar { position: absolute; left: 0; right: 0; height: 27px; background: rgba(0,0,8,.97); border-top: 1px solid rgba(0,240,245,.2); overflow: hidden; display: flex; align-items: center; z-index: 4; }
+  .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 22s linear infinite; }
+  .ticker-item { font-family: 'Space Mono', monospace; font-size: 9px; padding: 0 16px; }
+  .ticker-item.hot { color: #00f0f5; }
+  .ticker-item.dim { color: #4a5a7a; }
+  .ticker-item.win { color: #00e676; }
 
-  /* ── ACCOUNT screen ── */
-  .account-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 18px 12px;
-    flex-shrink: 0;
-  }
-  .account-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 20px; font-weight: 700;
-    letter-spacing: .1em; color: #eef2ff;
-    text-transform: uppercase;
-  }
-  .settings-btn {
-    width: 32px; height: 32px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.09);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-  }
+  /* bet slip modal */
+  .slip-modal { display: none; position: absolute; inset: 0; background: rgba(0,0,0,.65); z-index: 60; align-items: flex-end; }
+  .slip-modal.open { display: flex; }
+  .slip-sheet { width: 100%; background: #09091c; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 18px 18px 40px; border-top: 1px solid rgba(0,240,245,.15); animation: sheet-up .25s cubic-bezier(.4,0,.2,1) both; }
+  .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.15); margin: 0 auto 16px; }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .sheet-head-left { display: flex; align-items: center; gap: 10px; }
+  .sheet-title { font-family: 'Rajdhani', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: .08em; color: #eef2ff; }
+  .type-badge { padding: 2px 8px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 5px; font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; color: #4a5a7a; letter-spacing: .06em; }
+  .type-badge.parlay { background: rgba(123,92,255,.15); border-color: rgba(123,92,255,.4); color: #a78bff; }
+  .sheet-close { font-size: 16px; color: #4a5a7a; cursor: pointer; padding: 4px; }
+  .slip-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid rgba(255,255,255,.06); }
+  .slip-bet-info { flex: 1; min-width: 0; }
+  .slip-bet-team { font-size: 13px; font-weight: 600; color: #eef2ff; }
+  .slip-bet-meta { font-family: 'Space Mono', monospace; font-size: 10px; color: #4a5a7a; margin-top: 2px; }
+  .slip-bet-odds { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; color: #00f0f5; flex-shrink: 0; }
+  .slip-remove { font-size: 14px; color: #3d4e6e; cursor: pointer; padding: 4px; flex-shrink: 0; }
+  .parlay-note { margin-top: 4px; padding: 8px 12px; background: rgba(123,92,255,.1); border: 1px solid rgba(123,92,255,.2); border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 11px; color: #a78bff; }
+  .place-btn { display: block; width: 100%; margin-top: 14px; padding: 14px; background: linear-gradient(90deg,#00c0c8,#0050ff); border-radius: 12px; text-align: center; font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: .06em; color: white; cursor: pointer; transition: opacity .15s; -webkit-tap-highlight-color: transparent; }
+  .place-btn:active { opacity: .85; }
 
-  .scroll-area {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 108px;
-  }
-
-  /* profile */
-  .profile-block {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    padding: 4px 18px 16px;
-  }
-  .profile-avatar {
-    width: 58px; height: 58px;
-    border-radius: 50%;
-    background: linear-gradient(135deg,#00c0c8,#0050ff);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 0 22px rgba(0,80,255,.35);
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 22px; font-weight: 700; color: white;
-  }
-  .profile-name {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 19px; font-weight: 700;
-    color: #eef2ff; letter-spacing: .02em;
-  }
+  /* ACCOUNT */
+  .account-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 18px 12px; flex-shrink: 0; }
+  .account-title { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: .1em; color: #eef2ff; text-transform: uppercase; }
+  .settings-btn { width: 32px; height: 32px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .scroll-area { flex: 1; overflow-y: auto; padding-bottom: 108px; }
+  .profile-block { display: flex; align-items: center; gap: 13px; padding: 4px 18px 16px; }
+  .profile-avatar { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg,#00c0c8,#0050ff); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 22px rgba(0,80,255,.35); font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; color: white; }
+  .profile-name { font-family: 'Rajdhani', sans-serif; font-size: 19px; font-weight: 700; color: #eef2ff; letter-spacing: .02em; }
   .profile-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
   .profile-handle { font-family: 'Space Mono', monospace; font-size: 11px; color: #4a5a7a; }
-  .vip-badge {
-    padding: 1px 7px;
-    background: rgba(0,240,245,.1);
-    border: 1px solid rgba(0,240,245,.25);
-    border-radius: 4px;
-    font-family: 'Space Mono', monospace;
-    font-size: 9px; color: #00f0f5;
-    letter-spacing: .06em;
-  }
-
-  /* section header */
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 9px;
-  }
-  .section-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 13px; font-weight: 700;
-    letter-spacing: .12em; color: #eef2ff;
-    text-transform: uppercase;
-  }
+  .vip-badge { padding: 1px 7px; background: rgba(0,240,245,.1); border: 1px solid rgba(0,240,245,.25); border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 9px; color: #00f0f5; letter-spacing: .06em; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+  .section-title { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .12em; color: #eef2ff; text-transform: uppercase; }
   .section-meta { font-family: 'Space Mono', monospace; font-size: 10px; color: #3d4e6e; }
-
-  /* record */
   .record-section { padding: 0 18px; }
   .stat-tiles { display: flex; gap: 8px; margin-bottom: 10px; }
-  .stat-tile {
-    flex: 1;
-    border-radius: 12px;
-    padding: 13px 10px;
-    text-align: center;
-  }
+  .stat-tile { flex: 1; border-radius: 12px; padding: 13px 10px; text-align: center; }
   .stat-tile.wins   { background: rgba(0,230,118,.06); border: 1px solid rgba(0,230,118,.18); }
   .stat-tile.losses { background: rgba(255,41,82,.06);  border: 1px solid rgba(255,41,82,.18); }
   .stat-tile.rate   { background: rgba(0,240,245,.06);  border: 1px solid rgba(0,240,245,.2); }
-  .stat-num {
-    font-family: 'Space Mono', monospace;
-    font-size: 24px; font-weight: 700;
-    line-height: 1;
-  }
-  .stat-num.wins   { color: #00e676; text-shadow: 0 0 14px rgba(0,230,118,.3); }
-  .stat-num.losses { color: #ff2952; text-shadow: 0 0 14px rgba(255,41,82,.3); }
-  .stat-num.rate   { color: #00f0f5; text-shadow: 0 0 14px rgba(0,240,245,.35); }
-  .stat-label {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    margin-top: 5px;
-  }
+  .stat-num { font-family: 'Space Mono', monospace; font-size: 24px; font-weight: 700; line-height: 1; }
+  .stat-num.wins   { color: #00e676; }
+  .stat-num.losses { color: #ff2952; }
+  .stat-num.rate   { color: #00f0f5; }
+  .stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; margin-top: 5px; }
   .stat-label.wins   { color: rgba(0,230,118,.7); }
   .stat-label.losses { color: rgba(255,41,82,.7); }
   .stat-label.rate   { color: rgba(0,240,245,.7); }
-  .win-bar-bg {
-    height: 7px;
-    border-radius: 4px;
-    overflow: hidden;
-    background: rgba(255,255,255,.05);
-    margin-bottom: 6px;
-  }
-  .win-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg,#00e676,#00c0c8);
-    transition: width .6s ease;
-  }
-  .record-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+  .win-bar-bg { height: 7px; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.05); margin-bottom: 6px; }
+  .win-bar-fill { height: 100%; background: linear-gradient(90deg,#00e676,#00c0c8); transition: width .6s ease; }
+  .record-footer { display: flex; align-items: center; justify-content: space-between; }
   .record-footer-item { font-family: 'Space Mono', monospace; font-size: 9px; color: #3d4e6e; }
   .record-net { font-family: 'Space Mono', monospace; font-size: 9px; color: #4a5a7a; }
   .net-green { color: #00e676; }
-
-  /* wallet */
   .wallet-section { padding: 18px 18px 0; }
   .balance-tiles { display: flex; gap: 8px; margin-bottom: 12px; }
-  .promo-tile {
-    flex: 1.3;
-    background: linear-gradient(145deg,#0e0e30,#101240);
-    border: 1px solid rgba(0,240,245,.22);
-    border-radius: 12px;
-    padding: 12px 13px;
-  }
-  .gems-tile {
-    flex: 1;
-    background: rgba(10,10,26,1);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 12px;
-    padding: 12px 13px;
-  }
-  .tile-label {
-    font-size: 9px;
-    color: #4a5a7a;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-  }
-  .promo-amount {
-    font-family: 'Space Mono', monospace;
-    font-size: 21px; font-weight: 700;
-    color: #00f0f5;
-    text-shadow: 0 0 16px rgba(0,240,245,.4);
-    margin-top: 3px; line-height: 1;
-  }
+  .promo-tile { flex: 1.3; background: linear-gradient(145deg,#0e0e30,#101240); border: 1px solid rgba(0,240,245,.22); border-radius: 12px; padding: 12px 13px; }
+  .gems-tile  { flex: 1; background: rgba(10,10,26,1); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px 13px; }
+  .tile-label { font-size: 9px; color: #4a5a7a; text-transform: uppercase; letter-spacing: .08em; }
+  .promo-amount { font-family: 'Space Mono', monospace; font-size: 21px; font-weight: 700; color: #00f0f5; text-shadow: 0 0 16px rgba(0,240,245,.4); margin-top: 3px; line-height: 1; }
   .gems-row { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
-  .gems-count {
-    font-family: 'Space Mono', monospace;
-    font-size: 21px; font-weight: 700;
-    color: #eef2ff; line-height: 1;
-  }
-
-  .buy-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
+  .gems-count { font-family: 'Space Mono', monospace; font-size: 21px; font-weight: 700; color: #eef2ff; line-height: 1; }
+  .buy-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
   .buy-title { font-size: 12px; font-weight: 600; color: #c0cae0; }
   .buy-subtitle { font-size: 10px; color: #3d4e6e; }
-
-  .pack-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .pack-card {
-    position: relative;
-    border-radius: 12px;
-    padding: 13px 12px;
-    cursor: pointer;
-    border: 1px solid rgba(255,255,255,.08);
-    background: rgba(10,10,26,1);
-    transition: border-color .15s, background .15s, box-shadow .15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .pack-card.selected {
-    background: rgba(0,240,245,.1);
-    border-color: #00f0f5;
-    box-shadow: 0 0 18px rgba(0,240,245,.18);
-  }
-  .pack-popular {
-    position: absolute;
-    top: -7px; right: 10px;
-    padding: 1px 7px;
-    background: #00f0f5;
-    border-radius: 4px;
-    font-family: 'Space Mono', monospace;
-    font-size: 8px; font-weight: 700;
-    color: #03060a; letter-spacing: .06em;
-  }
-  .pack-gems-row { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
-  .pack-gems-count {
-    font-family: 'Space Mono', monospace;
-    font-size: 16px; font-weight: 700; color: #eef2ff;
-  }
-  .pack-price-row { display: flex; align-items: center; justify-content: space-between; }
+  .pack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pack-card { position: relative; border-radius: 12px; padding: 13px 12px; cursor: pointer; border: 1px solid rgba(255,255,255,.08); background: rgba(10,10,26,1); transition: border-color .15s, background .15s, box-shadow .15s; -webkit-tap-highlight-color: transparent; }
+  .pack-card.selected { background: rgba(0,240,245,.1); border-color: #00f0f5; box-shadow: 0 0 18px rgba(0,240,245,.18); }
+  .pack-popular { position: absolute; top: -7px; right: 10px; padding: 1px 7px; background: #00f0f5; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700; color: #03060a; letter-spacing: .06em; }
+  .pack-gems-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .pack-gems-count { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: #eef2ff; }
+  .pack-promo-cash { font-family: 'Space Mono', monospace; font-size: 10px; color: #00e676; margin-bottom: 4px; }
   .pack-price { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: #c0cae0; }
-  .pack-promo { font-family: 'Space Mono', monospace; font-size: 10px; color: #00e676; }
-
-  .promo-explainer {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    margin-top: 10px;
-    padding: 9px 12px;
-    background: rgba(0,230,118,.05);
-    border: 1px solid rgba(0,230,118,.16);
-    border-radius: 10px;
-  }
+  .promo-explainer { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; padding: 9px 12px; background: rgba(0,230,118,.05); border: 1px solid rgba(0,230,118,.16); border-radius: 10px; }
   .explainer-text { font-size: 10px; line-height: 1.45; color: #7fd8a8; }
   .explainer-text strong { color: #00e676; font-weight: 600; }
-
-  .buy-btn {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-radius: 12px;
-    padding: 13px 16px;
-    cursor: pointer;
-    background: linear-gradient(135deg,#00c0c8,#0050ff);
-    box-shadow: 0 4px 24px rgba(0,80,255,.3);
-    transition: opacity .15s, transform .1s;
-    -webkit-tap-highlight-color: transparent;
-  }
+  .buy-btn { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; border-radius: 12px; padding: 13px 16px; cursor: pointer; background: linear-gradient(135deg,#00c0c8,#0050ff); box-shadow: 0 4px 24px rgba(0,80,255,.3); transition: opacity .15s, transform .1s; -webkit-tap-highlight-color: transparent; }
   .buy-btn:active { opacity: .85; transform: scale(.98); }
-  .buy-btn-label {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 15px; font-weight: 700;
-    letter-spacing: .05em; color: white;
-  }
+  .buy-btn-label { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: .05em; color: white; }
   .buy-btn-sub { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.85); }
-
-  /* flash toast */
-  .buy-toast {
-    position: absolute;
-    bottom: 118px; left: 18px; right: 18px;
-    background: linear-gradient(135deg,#00c0c8,#0050ff);
-    border-radius: 11px;
-    padding: 11px 15px;
-    display: flex; align-items: center; gap: 9px;
-    box-shadow: 0 8px 30px rgba(0,80,255,.4);
-    z-index: 20;
-    animation: buy-flash 1.8s ease-out forwards;
-  }
+  .buy-toast { position: absolute; bottom: 118px; left: 18px; right: 18px; background: linear-gradient(135deg,#00c0c8,#0050ff); border-radius: 11px; padding: 11px 15px; display: flex; align-items: center; gap: 9px; box-shadow: 0 8px 30px rgba(0,80,255,.4); z-index: 20; animation: buy-flash 1.8s ease-out forwards; }
   .toast-text { font-size: 12px; font-weight: 600; color: white; }
-
-  /* friends */
   .friends-section { padding: 20px 18px 0; }
   .add-friend-row { display: flex; gap: 8px; margin-bottom: 12px; }
-  .friend-input-wrap {
-    flex: 1;
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 10px;
-    padding: 0 12px;
-    transition: border-color .15s;
-  }
+  .friend-input-wrap { flex: 1; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 0 12px; transition: border-color .15s; }
   .friend-input-wrap:focus-within { border-color: rgba(0,240,245,.4); }
-  .friend-input {
-    flex: 1; width: 100%;
-    background: transparent; border: none; outline: none;
-    font-family: 'Space Mono', monospace;
-    font-size: 12px; color: #eef2ff;
-    padding: 11px 0;
-  }
+  .friend-input { flex: 1; width: 100%; background: transparent; border: none; outline: none; font-family: 'Space Mono', monospace; font-size: 12px; color: #eef2ff; padding: 11px 0; }
   .friend-input::placeholder { color: #3d4e6e; }
-  .add-btn {
-    display: flex; align-items: center; justify-content: center;
-    padding: 0 16px;
-    background: linear-gradient(135deg,#00c0c8,#0050ff);
-    border-radius: 10px;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0,80,255,.25);
-    -webkit-tap-highlight-color: transparent;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 14px; font-weight: 700;
-    letter-spacing: .04em; color: white;
-    transition: opacity .15s;
-  }
+  .add-btn { display: flex; align-items: center; justify-content: center; padding: 0 16px; background: linear-gradient(135deg,#00c0c8,#0050ff); border-radius: 10px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,80,255,.25); -webkit-tap-highlight-color: transparent; font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .04em; color: white; transition: opacity .15s; }
   .add-btn:active { opacity: .8; }
-
   .friends-list { display: flex; flex-direction: column; gap: 8px; }
-  .friend-card {
-    display: flex; align-items: center; gap: 11px;
-    background: rgba(10,10,26,1);
-    border: 1px solid rgba(255,255,255,.06);
-    border-radius: 12px;
-    padding: 10px 13px;
-    animation: slide-in .3s ease-out both;
-  }
-  .friend-avatar {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 14px; font-weight: 700; color: white;
-  }
+  .friend-card { display: flex; align-items: center; gap: 11px; background: rgba(10,10,26,1); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 10px 13px; animation: slide-in .3s ease-out both; }
+  .friend-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: white; }
   .friend-name { font-size: 13px; font-weight: 600; color: #eef2ff; }
   .friend-status { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
   .status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
@@ -642,29 +207,16 @@
 <body>
 <div id="app">
 
-  <!-- ══════════════════════════════ HOME SCREEN ══════════════════════════════ -->
+  <!-- HOME SCREEN -->
   <div class="screen" id="screen-home">
-
-    <!-- Status bar -->
     <div class="status-bar">
       <span class="status-time">9:41</span>
       <div class="status-icons">
-        <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-          <rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/>
-          <rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/>
-          <rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/>
-          <rect x="9" y="0" width="2" height="10" fill="#eef2ff"/>
-        </svg>
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
         <span class="status-5g">5G</span>
-        <svg width="22" height="11" viewBox="0 0 22 11" fill="none">
-          <rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/>
-          <rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/>
-          <rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/>
-        </svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
       </div>
     </div>
-
-    <!-- Header -->
     <div class="home-header">
       <span class="brand">VOLT<span>LINE</span></span>
       <div class="header-right">
@@ -675,153 +227,46 @@
         <div class="avatar" onclick="navigate('account')">JD</div>
       </div>
     </div>
-
-    <!-- Sport tabs -->
-    <div class="sport-tabs">
-      <div class="sport-tab active">NBA</div>
-      <div class="sport-tab">NFL</div>
-      <div class="sport-tab">Soccer</div>
-      <div class="sport-tab">NHL</div>
-      <div class="sport-tab">Tennis</div>
-      <div class="sport-tab">UFC</div>
-      <div class="sport-tab">Boxing</div>
+    <div class="sport-tabs" id="sport-tabs">
+      <div class="sport-tab active" onclick="switchSport(this,'NBA')">NBA</div>
+      <div class="sport-tab" onclick="switchSport(this,'NFL')">NFL</div>
+      <div class="sport-tab" onclick="switchSport(this,'Soccer')">Soccer</div>
+      <div class="sport-tab" onclick="switchSport(this,'NHL')">NHL</div>
+      <div class="sport-tab" onclick="switchSport(this,'Tennis')">Tennis</div>
+      <div class="sport-tab" onclick="switchSport(this,'UFC')">UFC</div>
+      <div class="sport-tab" onclick="switchSport(this,'Boxing')">Boxing</div>
     </div>
-
-    <!-- Live header -->
     <div class="live-header">
       <div class="live-left">
         <div class="live-dot"></div>
-        <span class="live-title">Live Games</span>
-        <span class="live-count">23</span>
+        <span class="live-title" id="live-sport-label">Live NBA</span>
+        <span class="live-count" id="live-count"></span>
       </div>
       <span class="see-all">See all →</span>
     </div>
-
-    <!-- Game cards -->
-    <div class="game-grid">
-      <div class="game-card featured" style="animation-delay:.1s">
-        <div class="game-card-header">
-          <span class="game-period">● Q4</span>
-          <span class="game-sport">NBA</span>
-        </div>
-        <div class="game-teams">
-          <div class="game-team-row">
-            <span class="team-abbr">LAL</span>
-            <span class="team-score" style="color:rgba(238,242,255,.5)">108</span>
-          </div>
-          <div class="game-team-row">
-            <span class="team-abbr featured-leader">BOS</span>
-            <span class="team-score featured-leader">112</span>
-          </div>
-        </div>
-        <div class="game-odds featured">
-          <span class="odds-text featured" id="bos-odds">+125</span>
-        </div>
-      </div>
-
-      <div class="game-card" style="animation-delay:.18s">
-        <div class="game-card-header">
-          <span class="game-period">● Q3</span>
-          <span class="game-sport">NBA</span>
-        </div>
-        <div class="game-teams">
-          <div class="game-team-row">
-            <span class="team-abbr">GSW</span>
-            <span class="team-score">89</span>
-          </div>
-          <div class="game-team-row">
-            <span class="team-abbr leading">MIL</span>
-            <span class="team-score leading">94</span>
-          </div>
-        </div>
-        <div class="game-odds">
-          <span class="odds-text">+135</span>
-        </div>
-      </div>
-
-      <div class="game-card" style="animation-delay:.26s">
-        <div class="game-card-header">
-          <span class="game-period">● H2</span>
-          <span class="game-sport">NBA</span>
-        </div>
-        <div class="game-teams">
-          <div class="game-team-row">
-            <span class="team-abbr">MIA</span>
-            <span class="team-score">76</span>
-          </div>
-          <div class="game-team-row">
-            <span class="team-abbr leading">NYK</span>
-            <span class="team-score leading">81</span>
-          </div>
-        </div>
-        <div class="game-odds">
-          <span class="odds-text">+165</span>
-        </div>
-      </div>
-
-      <div class="game-card" style="animation-delay:.34s">
-        <div class="game-card-header">
-          <span class="game-period">● 3Q</span>
-          <span class="game-sport">NFL</span>
-        </div>
-        <div class="game-teams">
-          <div class="game-team-row">
-            <span class="team-abbr leading">KC</span>
-            <span class="team-score leading">24</span>
-          </div>
-          <div class="game-team-row">
-            <span class="team-abbr">SF</span>
-            <span class="team-score">17</span>
-          </div>
-        </div>
-        <div class="game-odds">
-          <span class="odds-text">-120</span>
-        </div>
-      </div>
+    <div class="games-area">
+      <div id="games-container"></div>
     </div>
 
-    <!-- Active bets -->
-    <div class="active-bets">
-      <div class="bets-header">
-        <span class="bets-title">Active Bets</span>
-        <div class="bets-meta">
-          <span class="bets-today">+$48 today</span>
-          <span class="bets-open">4 open</span>
-        </div>
+    <!-- Bet slip bar (above ticker) -->
+    <div class="bet-slip-bar" id="slip-bar" onclick="openSlip()">
+      <div class="slip-bar-left">
+        <div class="slip-badge" id="slip-badge">0</div>
+        <span class="slip-bar-label" id="slip-bar-label">BET SLIP</span>
       </div>
-      <div class="bet-row">
-        <div>
-          <div class="bet-name">BOS ML — <span id="bos-odds-bet">+125</span></div>
-          <div class="bet-detail">$50 stake · to win $62.50</div>
-        </div>
-        <div style="text-align:right">
-          <div class="bet-result-win">+$12.50</div>
-          <div class="bet-status">Winning</div>
-        </div>
-      </div>
-      <div class="bet-row">
-        <div>
-          <div class="bet-name">MIL -4 SPRD</div>
-          <div class="bet-detail">$25 stake · to win $22.73</div>
-        </div>
-        <div style="text-align:right">
-          <div class="bet-result-lose">-$2.73</div>
-          <div class="bet-status">Trailing</div>
-        </div>
-      </div>
+      <span class="slip-bar-cta">VIEW SLIP ↑</span>
     </div>
 
     <!-- Ticker -->
-    <div class="ticker-bar">
+    <div class="ticker-bar" id="ticker-bar">
       <div class="ticker-track" id="ticker">
-        <span class="ticker-item hot" id="ticker-bos">● LAL 108 – BOS 112 Q4 2:34</span>
+        <span class="ticker-item hot" id="ticker-live">● LAL 108 – BOS 112 Q4 2:34</span>
         <span class="ticker-item dim">GSW 89 – MIL 94 Q3 5:12</span>
         <span class="ticker-item dim">MIA 76 – NYK 81 H2 3:22</span>
         <span class="ticker-item dim">KC 24 – SF 17 3Q 8:45</span>
         <span class="ticker-item dim">MCI 1 – ARS 2 72'</span>
         <span class="ticker-item win">PHX 98 – DAL 101 Q4 1:54</span>
-        <!-- duplicate for seamless loop -->
-        <span class="ticker-item hot" id="ticker-bos2">● LAL 108 – BOS 112 Q4 2:34</span>
+        <span class="ticker-item hot" id="ticker-live2">● LAL 108 – BOS 112 Q4 2:34</span>
         <span class="ticker-item dim">GSW 89 – MIL 94 Q3 5:12</span>
         <span class="ticker-item dim">MIA 76 – NYK 81 H2 3:22</span>
         <span class="ticker-item dim">KC 24 – SF 17 3Q 8:45</span>
@@ -831,87 +276,65 @@
     </div>
 
     <!-- Bottom nav -->
-    <div class="bottom-nav">
+    <div class="bottom-nav" id="home-nav">
       <div class="nav-item active" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="nav-label active">Home</span>
       </div>
       <div class="nav-item" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/>
-          <circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
         <span class="nav-label">Live</span>
       </div>
       <div class="nav-item" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/>
-          <circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/>
-          <circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/>
-          <circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/>
-          <circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/>
-          <circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
         <span class="nav-label">Casino</span>
       </div>
       <div class="nav-item" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <rect x="3.5" y="4" width="13" height="12" rx="2" stroke="#3d4e6e" stroke-width="1.5"/>
-          <path d="M7 8.5h6M7 12h4" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="4" width="13" height="12" rx="2" stroke="#3d4e6e" stroke-width="1.5"/><path d="M7 8.5h6M7 12h4" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
         <span class="nav-label">Bets</span>
       </div>
       <div class="nav-item" onclick="navigate('account')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="7.5" r="3" stroke="#00f0f5" stroke-width="1.5"/>
-          <path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7.5" r="3" stroke="#3d4e6e" stroke-width="1.5"/><path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
         <span class="nav-label">Account</span>
+      </div>
+    </div>
+
+    <!-- Bet slip modal -->
+    <div class="slip-modal" id="slip-modal" onclick="closeSlipIfOverlay(event)">
+      <div class="slip-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-head">
+          <div class="sheet-head-left">
+            <span class="sheet-title">BET SLIP</span>
+            <div class="type-badge" id="slip-type-badge">STRAIGHT</div>
+          </div>
+          <span class="sheet-close" onclick="closeSlip()">✕</span>
+        </div>
+        <div id="slip-bets"></div>
+        <div id="parlay-note" style="display:none" class="parlay-note"></div>
+        <div class="place-btn" onclick="placeSlip()">PLACE BET</div>
       </div>
     </div>
 
   </div><!-- /screen-home -->
 
-
-  <!-- ══════════════════════════════ ACCOUNT SCREEN ══════════════════════════════ -->
+  <!-- ACCOUNT SCREEN -->
   <div class="screen hidden-right" id="screen-account">
-
-    <!-- Status bar -->
     <div class="status-bar">
       <span class="status-time">9:41</span>
       <div class="status-icons">
-        <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-          <rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/>
-          <rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/>
-          <rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/>
-          <rect x="9" y="0" width="2" height="10" fill="#eef2ff"/>
-        </svg>
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
         <span class="status-5g">5G</span>
-        <svg width="22" height="11" viewBox="0 0 22 11" fill="none">
-          <rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/>
-          <rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/>
-          <rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/>
-        </svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
       </div>
     </div>
-
-    <!-- Header -->
     <div class="account-header">
       <span class="account-title">Account</span>
       <div class="settings-btn">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <circle cx="7.5" cy="7.5" r="2.2" stroke="#eef2ff" stroke-opacity=".55" stroke-width="1.2"/>
-          <path d="M7.5 1.2v1.8M7.5 12v1.8M1.2 7.5H3M12 7.5h1.8M3.1 3.1l1.3 1.3M10.6 10.6l1.3 1.3M11.9 3.1l-1.3 1.3M4.4 10.6l-1.3 1.3" stroke="#eef2ff" stroke-opacity=".4" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="2.2" stroke="#eef2ff" stroke-opacity=".55" stroke-width="1.2"/><path d="M7.5 1.2v1.8M7.5 12v1.8M1.2 7.5H3M12 7.5h1.8M3.1 3.1l1.3 1.3M10.6 10.6l1.3 1.3M11.9 3.1l-1.3 1.3M4.4 10.6l-1.3 1.3" stroke="#eef2ff" stroke-opacity=".4" stroke-width="1.2" stroke-linecap="round"/></svg>
       </div>
     </div>
-
-    <!-- Scrollable content -->
     <div class="scroll-area">
-
-      <!-- Profile -->
       <div class="profile-block">
         <div class="profile-avatar">JD</div>
         <div>
@@ -922,264 +345,401 @@
           </div>
         </div>
       </div>
-
-      <!-- Record -->
       <div class="record-section">
         <div class="section-header">
           <span class="section-title">Record</span>
           <span class="section-meta" id="total-bets">231 settled</span>
         </div>
         <div class="stat-tiles">
-          <div class="stat-tile wins">
-            <div class="stat-num wins" id="wins-num">142</div>
-            <div class="stat-label wins">Wins</div>
-          </div>
-          <div class="stat-tile losses">
-            <div class="stat-num losses" id="losses-num">89</div>
-            <div class="stat-label losses">Losses</div>
-          </div>
-          <div class="stat-tile rate">
-            <div class="stat-num rate" id="win-rate">61%</div>
-            <div class="stat-label rate">Win Rate</div>
-          </div>
+          <div class="stat-tile wins"><div class="stat-num wins" id="wins-num">142</div><div class="stat-label wins">Wins</div></div>
+          <div class="stat-tile losses"><div class="stat-num losses" id="losses-num">89</div><div class="stat-label losses">Losses</div></div>
+          <div class="stat-tile rate"><div class="stat-num rate" id="win-rate">61%</div><div class="stat-label rate">Win Rate</div></div>
         </div>
-        <div class="win-bar-bg">
-          <div class="win-bar-fill" id="win-bar" style="width:61%"></div>
-        </div>
+        <div class="win-bar-bg"><div class="win-bar-fill" id="win-bar" style="width:61%"></div></div>
         <div class="record-footer">
           <span class="record-footer-item" id="wins-label">142W</span>
           <span class="record-net">Net <span class="net-green">+$1,284</span> lifetime</span>
           <span class="record-footer-item" id="losses-label">89L</span>
         </div>
       </div>
-
-      <!-- Wallet -->
       <div class="wallet-section">
-        <div class="section-header">
-          <span class="section-title">Wallet</span>
-        </div>
+        <div class="section-header"><span class="section-title">Wallet</span></div>
         <div class="balance-tiles">
-          <div class="promo-tile">
-            <div class="tile-label">Promotional Cash</div>
-            <div class="promo-amount" id="promo-cash">$3,240.50</div>
-          </div>
-          <div class="gems-tile">
-            <div class="tile-label">Gems</div>
-            <div class="gems-row">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                <path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/>
-                <path d="M1 6h14M5.5 2 4 6l4 8 4-8-1.5-4" stroke="#00f0f5" stroke-width=".8" stroke-opacity=".5"/>
-              </svg>
-              <span class="gems-count" id="gems-count">1,250</span>
-            </div>
-          </div>
+          <div class="promo-tile"><div class="tile-label">Promotional Cash</div><div class="promo-amount" id="promo-cash">$3,240.50</div></div>
+          <div class="gems-tile"><div class="tile-label">Gems</div><div class="gems-row"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/><path d="M1 6h14M5.5 2 4 6l4 8 4-8-1.5-4" stroke="#00f0f5" stroke-width=".8" stroke-opacity=".5"/></svg><span class="gems-count" id="gems-count">1,250</span></div></div>
         </div>
-
-        <div class="buy-header">
-          <span class="buy-title">Buy gems</span>
-          <span class="buy-subtitle">Get equal promo cash, free</span>
-        </div>
+        <div class="buy-header"><span class="buy-title">Buy gems</span><span class="buy-subtitle">Get equal promo cash, free</span></div>
         <div class="pack-grid" id="pack-grid"></div>
-
         <div class="promo-explainer">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:1px">
-            <circle cx="7" cy="7" r="6" stroke="#00e676" stroke-width="1.1"/>
-            <path d="M7 6.2v3.4M7 4.3v.1" stroke="#00e676" stroke-width="1.3" stroke-linecap="round"/>
-          </svg>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="7" cy="7" r="6" stroke="#00e676" stroke-width="1.1"/><path d="M7 6.2v3.4M7 4.3v.1" stroke="#00e676" stroke-width="1.3" stroke-linecap="round"/></svg>
           <span class="explainer-text">Every gem purchase instantly credits <strong>promotional cash equal to what you paid</strong> — bet with it across the book.</span>
         </div>
-
         <div class="buy-btn" id="buy-btn" onclick="buyPack()">
           <span class="buy-btn-label" id="buy-label">Buy 250 Gems</span>
-          <span class="buy-btn-sub" id="buy-sub">$9.99 → +$9.99 promo</span>
+          <span class="buy-btn-sub" id="buy-sub">$9.99 → +$9.99 promo cash</span>
         </div>
       </div>
-
-      <!-- Friends -->
       <div class="friends-section">
-        <div class="section-header">
-          <span class="section-title">Friends</span>
-          <span class="section-meta" id="friend-count">3 added</span>
-        </div>
+        <div class="section-header"><span class="section-title">Friends</span><span class="section-meta" id="friend-count">3 added</span></div>
         <div class="add-friend-row">
           <div class="friend-input-wrap">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0">
-              <circle cx="6" cy="6" r="4" stroke="#3d4e6e" stroke-width="1.2"/>
-              <path d="M9 9l3 3" stroke="#3d4e6e" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="6" cy="6" r="4" stroke="#3d4e6e" stroke-width="1.2"/><path d="M9 9l3 3" stroke="#3d4e6e" stroke-width="1.2" stroke-linecap="round"/></svg>
             <input class="friend-input" id="friend-input" placeholder="Add by @username" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
           </div>
           <div class="add-btn" onclick="addFriend()">ADD</div>
         </div>
         <div class="friends-list" id="friends-list"></div>
       </div>
-
-    </div><!-- /scroll-area -->
-
-    <!-- Toast (injected dynamically) -->
-
-    <!-- Bottom nav -->
+    </div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="nav-label">Home</span>
       </div>
       <div class="nav-item" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/>
-          <circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
         <span class="nav-label">Live</span>
       </div>
       <div class="nav-item" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/>
-          <circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/>
-          <circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/>
-          <circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/>
-          <circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/>
-          <circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
         <span class="nav-label">Casino</span>
       </div>
       <div class="nav-item" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <rect x="3.5" y="4" width="13" height="12" rx="2" stroke="#3d4e6e" stroke-width="1.5"/>
-          <path d="M7 8.5h6M7 12h4" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="4" width="13" height="12" rx="2" stroke="#3d4e6e" stroke-width="1.5"/><path d="M7 8.5h6M7 12h4" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
         <span class="nav-label">Bets</span>
       </div>
       <div class="nav-item active" onclick="navigate('account')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="7.5" r="3" stroke="#00f0f5" stroke-width="1.5"/>
-          <path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7.5" r="3" stroke="#00f0f5" stroke-width="1.5"/><path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round"/></svg>
         <span class="nav-label active">Account</span>
       </div>
     </div>
-
   </div><!-- /screen-account -->
 
 </div><!-- /app -->
 
 <script>
-// ─── State ───────────────────────────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────────────────────
 const state = {
-  screen: 'home',
-  wins: 142,
-  losses: 89,
-  promoCash: 3240.50,
-  gems: 1250,
+  screen: 'home', activeSport: 'NBA',
+  wins: 142, losses: 89, promoCash: 3240.50, gems: 1250,
   selectedPack: 'p2',
+  betSlip: [],
   friends: [
-    { id: 'f1', name: 'Marcus Tan',  initials: 'MT', status: 'online',  wr: '68%', bg: 'linear-gradient(135deg,#ff6a3d,#ff2952)' },
-    { id: 'f2', name: 'Sara Klein',  initials: 'SK', status: 'betting', wr: '54%', bg: 'linear-gradient(135deg,#00c0c8,#0050ff)' },
-    { id: 'f3', name: 'Devin Royce', initials: 'DR', status: 'offline', wr: '71%', bg: 'linear-gradient(135deg,#7b5cff,#0050ff)' }
+    { id:'f1', name:'Marcus Tan',  initials:'MT', status:'online',  wr:'68%', bg:'linear-gradient(135deg,#ff6a3d,#ff2952)' },
+    { id:'f2', name:'Sara Klein',  initials:'SK', status:'betting', wr:'54%', bg:'linear-gradient(135deg,#00c0c8,#0050ff)' },
+    { id:'f3', name:'Devin Royce', initials:'DR', status:'offline', wr:'71%', bg:'linear-gradient(135deg,#7b5cff,#0050ff)' }
   ],
-  // live clock
-  min: 2, sec: 34,
-  bosOdds: 125
+  min: 2, sec: 34
 };
 
 const PACKS = [
-  { id: 'p1', gems: 100,  price: 4.99,  popular: false },
-  { id: 'p2', gems: 250,  price: 9.99,  popular: true  },
-  { id: 'p3', gems: 600,  price: 19.99, popular: false },
-  { id: 'p4', gems: 1500, price: 49.99, popular: false }
+  { id:'p1', gems:100,  price:4.99,  popular:false },
+  { id:'p2', gems:250,  price:9.99,  popular:true  },
+  { id:'p3', gems:600,  price:19.99, popular:false },
+  { id:'p4', gems:1500, price:49.99, popular:false }
 ];
 
 const STATUS_MAP = {
-  online:  { color: '#00e676', text: 'Online' },
-  betting: { color: '#00f0f5', text: 'Live betting' },
-  offline: { color: '#3d4e6e', text: 'Offline' },
-  pending: { color: '#ffb02e', text: 'Request sent' }
+  online:  { color:'#00e676', text:'Online' },
+  betting: { color:'#00f0f5', text:'Live betting' },
+  offline: { color:'#3d4e6e', text:'Offline' },
+  pending: { color:'#ffb02e', text:'Request sent' }
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function money(n) {
-  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-function pad2(n) { return String(n).padStart(2, '0'); }
+const ESPN_URLS = {
+  NBA:    'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+  NFL:    'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+  Soccer: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
+  NHL:    'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+  UFC:    'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard'
+};
 
-// ─── Navigation ──────────────────────────────────────────────────────────────
+const FALLBACK_GAMES = {
+  Tennis: [
+    { id:'t1', sport:'Tennis', period:'● Set 2', isLive:true,  teams:[{abbr:'DJO',score:'6',lead:true},{abbr:'ALC',score:'4',lead:false}], awayOdds:'-155', homeOdds:'+130' },
+    { id:'t2', sport:'Tennis', period:'Final',   isLive:false, teams:[{abbr:'SIN',score:'3',lead:false},{abbr:'MED',score:'3',lead:false}], awayOdds:'+110', homeOdds:'-125' }
+  ],
+  Boxing: [
+    { id:'b1', sport:'Boxing', period:'● Rd 8', isLive:true, teams:[{abbr:'FUR',score:'—',lead:false},{abbr:'USY',score:'—',lead:false}], awayOdds:'+240', homeOdds:'-285' }
+  ]
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function money(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+function pad2(n)  { return String(n).padStart(2,'0'); }
+
+function strHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+function deterministicOdds(seed) {
+  const n = seed % 300;
+  return n < 150 ? `+${110 + (n % 90)}` : `-${115 + (n % 90)}`;
+}
+
+function parseESPN(data, sport) {
+  return (data.events || []).slice(0, 8).map(ev => {
+    const comp = ev.competitions?.[0];
+    const comps = comp?.competitors || [];
+    const away = comps.find(c => c.homeAway === 'away') || comps[0];
+    const home = comps.find(c => c.homeAway === 'home') || comps[1];
+    const statusDesc = ev.status?.type?.description || '';
+    const isLive = statusDesc === 'In Progress';
+    const isFinal = statusDesc === 'Final';
+    const period = comp?.status?.period || 1;
+    const clock = comp?.status?.displayClock || '';
+    let periodStr;
+    if (isLive) {
+      if (sport === 'NBA' || sport === 'NFL') periodStr = `● Q${period} ${clock}`;
+      else if (sport === 'Soccer') periodStr = `● ${clock}'`;
+      else if (sport === 'NHL') periodStr = `● P${period} ${clock}`;
+      else periodStr = '● LIVE';
+    } else if (isFinal) { periodStr = 'Final'; }
+    else {
+      const d = new Date(ev.date);
+      periodStr = d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    }
+    const awayAbbr = away?.team?.abbreviation || 'TBD';
+    const homeAbbr = home?.team?.abbreviation || 'TBD';
+    const awayScore = away?.score || (isFinal ? '0' : '—');
+    const homeScore = home?.score || (isFinal ? '0' : '—');
+    const aNum = parseInt(awayScore) || 0;
+    const hNum = parseInt(homeScore) || 0;
+    return {
+      id: ev.id, sport, period: periodStr, isLive,
+      teams: [
+        { abbr: awayAbbr, score: awayScore, lead: aNum > hNum },
+        { abbr: homeAbbr, score: homeScore, lead: hNum > aNum }
+      ],
+      awayOdds: deterministicOdds(strHash(awayAbbr + ev.id)),
+      homeOdds: deterministicOdds(strHash(homeAbbr + ev.id))
+    };
+  });
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
 function navigate(screen) {
   const from = document.getElementById('screen-' + state.screen);
   const to   = document.getElementById('screen-' + screen);
   if (!to || screen === state.screen) return;
-
   const goRight = screen === 'account';
   from.classList.add(goRight ? 'hidden-left' : 'hidden-right');
   to.classList.remove('hidden-left', 'hidden-right');
   state.screen = screen;
-
   if (screen === 'account') renderAccount();
 }
 
-// ─── Clock (home ticker) ─────────────────────────────────────────────────────
+// ─── Sport switching & ESPN fetch ─────────────────────────────────────────────
+function switchSport(el, sport) {
+  document.querySelectorAll('.sport-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  state.activeSport = sport;
+  document.getElementById('live-sport-label').textContent = 'Live ' + sport;
+  fetchGames(sport);
+}
+
+async function fetchGames(sport) {
+  const container = document.getElementById('games-container');
+  container.innerHTML = '<div class="games-loading"><div class="spinner"></div> Loading...</div>';
+  const liveCountEl = document.getElementById('live-count');
+  liveCountEl.textContent = '';
+
+  const url = ESPN_URLS[sport];
+  if (!url) {
+    renderGames(FALLBACK_GAMES[sport] || [], sport);
+    return;
+  }
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    const games = parseESPN(data, sport);
+    renderGames(games.length > 0 ? games : (FALLBACK_GAMES[sport] || []), sport);
+  } catch {
+    renderGames(FALLBACK_GAMES[sport] || [], sport);
+  }
+}
+
+function renderGames(games, sport) {
+  const container = document.getElementById('games-container');
+  const liveCountEl = document.getElementById('live-count');
+  if (games.length === 0) {
+    container.innerHTML = '<div class="games-empty">No live events right now</div>';
+    liveCountEl.textContent = '';
+    return;
+  }
+  const liveCount = games.filter(g => g.isLive).length;
+  liveCountEl.textContent = liveCount > 0 ? liveCount : '';
+
+  container.innerHTML = '<div class="game-grid">' + games.map((game, idx) => {
+    const featured = idx === 0;
+    const inSlip   = state.betSlip.some(b => b.gameId === game.id);
+    const delay    = idx * 0.08;
+    return `
+      <div class="game-card${featured ? ' featured' : ''}${inSlip ? ' in-slip' : ''}" id="card-${game.id}" style="animation-delay:${delay}s">
+        <div class="game-card-header">
+          <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
+          <span class="game-sport">${game.sport}</span>
+        </div>
+        ${game.teams.map((t, i) => {
+          const odds = i === 0 ? game.awayOdds : game.homeOdds;
+          const sel  = state.betSlip.some(b => b.id === game.id+'-'+t.abbr);
+          const leadClass = t.lead ? (featured && i === 1 ? ' feat' : ' leading') : '';
+          return `
+            <div class="game-team-row" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${sport}')">
+              <span class="team-abbr${leadClass}">${t.abbr}</span>
+              <div class="team-right">
+                <span class="team-score${leadClass}">${t.score}</span>
+                <span class="odds-btn${sel ? ' sel' : ''}" id="odds-${game.id}-${t.abbr}">${odds}</span>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }).join('') + '</div>';
+}
+
+// ─── Bet Slip ─────────────────────────────────────────────────────────────────
+function toggleBet(gameId, teamAbbr, opponent, odds, sport) {
+  const betId = gameId + '-' + teamAbbr;
+  const exists = state.betSlip.findIndex(b => b.id === betId);
+  if (exists >= 0) {
+    state.betSlip.splice(exists, 1);
+  } else {
+    // Remove any other bet from same game (can't bet both sides)
+    state.betSlip = state.betSlip.filter(b => b.gameId !== gameId);
+    state.betSlip.push({ id: betId, gameId, teamAbbr, opponent, odds, sport });
+  }
+  updateSlipBar();
+  // Re-render to refresh card border + odds highlights
+  fetchGames(state.activeSport);
+}
+
+function updateSlipBar() {
+  const bar   = document.getElementById('slip-bar');
+  const badge = document.getElementById('slip-badge');
+  const label = document.getElementById('slip-bar-label');
+  const n     = state.betSlip.length;
+  const isParlay = n >= 2;
+
+  if (n === 0) {
+    bar.classList.remove('show', 'parlay');
+    // Reposition ticker/nav
+    document.getElementById('ticker-bar').style.bottom = '74px';
+    document.getElementById('home-nav').style.bottom   = '0';
+    return;
+  }
+
+  bar.classList.add('show');
+  badge.textContent = n;
+  badge.className   = 'slip-badge' + (isParlay ? ' parlay' : '');
+  label.textContent = isParlay ? 'PARLAY' : 'STRAIGHT BET';
+  if (isParlay) bar.classList.add('parlay'); else bar.classList.remove('parlay');
+
+  // Push ticker + nav down to make room for slip bar
+  const barH = bar.offsetHeight || 42;
+  document.getElementById('ticker-bar').style.bottom = (74 + barH) + 'px';
+  document.getElementById('home-nav').style.bottom   = '0';
+  // Position bet slip bar just above ticker
+  bar.style.bottom = '101px';
+}
+
+function openSlip() {
+  renderSlipModal();
+  document.getElementById('slip-modal').classList.add('open');
+}
+
+function closeSlip() {
+  document.getElementById('slip-modal').classList.remove('open');
+}
+
+function closeSlipIfOverlay(e) {
+  if (e.target === document.getElementById('slip-modal')) closeSlip();
+}
+
+function renderSlipModal() {
+  const n = state.betSlip.length;
+  const isParlay = n >= 2;
+  document.getElementById('slip-type-badge').textContent = isParlay ? 'PARLAY' : 'STRAIGHT';
+  document.getElementById('slip-type-badge').className   = 'type-badge' + (isParlay ? ' parlay' : '');
+  document.querySelector('#slip-modal .place-btn').textContent = 'PLACE ' + (isParlay ? 'PARLAY' : 'BET');
+
+  document.getElementById('slip-bets').innerHTML = state.betSlip.map(b => `
+    <div class="slip-row">
+      <div class="slip-bet-info">
+        <div class="slip-bet-team">${b.teamAbbr} Moneyline</div>
+        <div class="slip-bet-meta">${b.sport} · vs ${b.opponent}</div>
+      </div>
+      <span class="slip-bet-odds">${b.odds}</span>
+      <span class="slip-remove" onclick="removeBet('${b.id}')">✕</span>
+    </div>`).join('');
+
+  const note = document.getElementById('parlay-note');
+  if (isParlay) {
+    note.style.display = 'block';
+    note.textContent   = `Parlay · ${n} legs combined`;
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+function removeBet(betId) {
+  state.betSlip = state.betSlip.filter(b => b.id !== betId);
+  updateSlipBar();
+  if (state.betSlip.length === 0) { closeSlip(); return; }
+  renderSlipModal();
+  fetchGames(state.activeSport);
+}
+
+function placeSlip() {
+  state.betSlip = [];
+  closeSlip();
+  updateSlipBar();
+  fetchGames(state.activeSport);
+}
+
+// ─── Live clock ───────────────────────────────────────────────────────────────
 setInterval(() => {
   if (state.sec > 0) state.sec--;
   else if (state.min > 0) { state.min--; state.sec = 59; }
-
   const t = `Q4 ${state.min}:${pad2(state.sec)}`;
-  const bosLabel = state.bosOdds > 0 ? `+${state.bosOdds}` : String(state.bosOdds);
-
-  // update ticker
-  const items = [document.getElementById('ticker-bos'), document.getElementById('ticker-bos2')];
-  items.forEach(el => { if (el) el.textContent = `● LAL 108 – BOS 112 ${t}`; });
-
-  // update odds
-  document.getElementById('bos-odds').textContent    = bosLabel;
-  document.getElementById('bos-odds-bet').textContent = bosLabel;
+  [document.getElementById('ticker-live'), document.getElementById('ticker-live2')]
+    .forEach(el => { if (el) el.textContent = `● LAL 108 – BOS 112 ${t}`; });
 }, 1000);
 
 // ─── Wallet ───────────────────────────────────────────────────────────────────
 function renderPacks() {
-  const grid = document.getElementById('pack-grid');
-  grid.innerHTML = PACKS.map(p => {
+  document.getElementById('pack-grid').innerHTML = PACKS.map(p => {
     const sel = p.id === state.selectedPack;
     return `
       <div class="pack-card${sel ? ' selected' : ''}" onclick="selectPack('${p.id}')">
         ${p.popular ? '<div class="pack-popular">POPULAR</div>' : ''}
         <div class="pack-gems-row">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/>
-          </svg>
-          <span class="pack-gems-count">${p.gems}</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/></svg>
+          <span class="pack-gems-count">${p.gems} gems</span>
         </div>
-        <div class="pack-price-row">
-          <span class="pack-price">${money(p.price)}</span>
-          <span class="pack-promo">+${money(p.price)}</span>
-        </div>
+        <div class="pack-promo-cash">+${money(p.price)} promo cash</div>
+        <div class="pack-price">${money(p.price)}</div>
       </div>`;
   }).join('');
 }
 
-function selectPack(id) {
-  state.selectedPack = id;
-  renderPacks();
-  updateBuyBtn();
-}
+function selectPack(id) { state.selectedPack = id; renderPacks(); updateBuyBtn(); }
 
 function updateBuyBtn() {
   const pack = PACKS.find(p => p.id === state.selectedPack);
   if (!pack) return;
   document.getElementById('buy-label').textContent = `Buy ${pack.gems} Gems`;
-  document.getElementById('buy-sub').textContent   = `${money(pack.price)} → +${money(pack.price)} promo`;
+  document.getElementById('buy-sub').textContent   = `${money(pack.price)} → +${money(pack.price)} promo cash`;
 }
 
 function buyPack() {
   const pack = PACKS.find(p => p.id === state.selectedPack);
   if (!pack) return;
-
-  state.gems     += pack.gems;
+  state.gems += pack.gems;
   state.promoCash += pack.price;
-
-  document.getElementById('promo-cash').textContent  = money(state.promoCash);
-  document.getElementById('gems-count').textContent  = state.gems.toLocaleString('en-US');
+  document.getElementById('promo-cash').textContent   = money(state.promoCash);
+  document.getElementById('gems-count').textContent   = state.gems.toLocaleString('en-US');
   document.getElementById('home-balance').textContent = money(state.promoCash);
-
   showToast(`+${pack.gems} gems · ${money(pack.price)} promo cash added`);
 }
 
@@ -1188,38 +748,26 @@ function showToast(msg) {
   const existing = document.querySelector('.buy-toast');
   if (existing) existing.remove();
   if (toastTimer) clearTimeout(toastTimer);
-
   const toast = document.createElement('div');
   toast.className = 'buy-toast';
-  toast.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" stroke="white" stroke-width="1.3"/>
-      <path d="M5 8l2 2 4-4.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span class="toast-text">${msg}</span>`;
+  toast.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="white" stroke-width="1.3"/><path d="M5 8l2 2 4-4.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="toast-text">${msg}</span>`;
   document.getElementById('screen-account').appendChild(toast);
-
   toastTimer = setTimeout(() => toast.remove(), 1850);
 }
 
-// ─── Friends ─────────────────────────────────────────────────────────────────
+// ─── Friends ──────────────────────────────────────────────────────────────────
 function renderFriends() {
-  const list = document.getElementById('friends-list');
-  list.innerHTML = state.friends.map(f => {
+  document.getElementById('friends-list').innerHTML = state.friends.map(f => {
     const st = STATUS_MAP[f.status] || STATUS_MAP.offline;
-    const pending = f.status === 'pending';
     return `
       <div class="friend-card">
         <div class="friend-avatar" style="background:${f.bg}">${f.initials}</div>
         <div style="flex:1;min-width:0">
           <div class="friend-name">${f.name}</div>
-          <div class="friend-status">
-            <div class="status-dot" style="background:${st.color}"></div>
-            <span class="status-text">${st.text}</span>
-          </div>
+          <div class="friend-status"><div class="status-dot" style="background:${st.color}"></div><span class="status-text">${st.text}</span></div>
         </div>
         <div class="friend-wr">
-          <div class="wr-number${pending ? ' pending' : ''}">${f.wr}</div>
+          <div class="wr-number${f.status==='pending'?' pending':''}">${f.wr}</div>
           <div class="wr-label">Win rate</div>
         </div>
       </div>`;
@@ -1231,35 +779,19 @@ function addFriend() {
   const input = document.getElementById('friend-input');
   const raw   = input.value.trim().replace(/^@/, '');
   if (!raw) return;
-
-  const name     = raw.charAt(0).toUpperCase() + raw.slice(1);
-  const initials = name.slice(0, 2).toUpperCase();
-  const bgs = [
-    'linear-gradient(135deg,#00e676,#00c0c8)',
-    'linear-gradient(135deg,#ff6a3d,#ff2952)',
-    'linear-gradient(135deg,#7b5cff,#0050ff)'
-  ];
-  state.friends.unshift({
-    id: 'f' + Date.now(),
-    name, initials,
-    status: 'pending',
-    wr: '—',
-    bg: bgs[state.friends.length % bgs.length]
-  });
+  const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const bgs  = ['linear-gradient(135deg,#00e676,#00c0c8)','linear-gradient(135deg,#ff6a3d,#ff2952)','linear-gradient(135deg,#7b5cff,#0050ff)'];
+  state.friends.unshift({ id:'f'+Date.now(), name, initials:name.slice(0,2).toUpperCase(), status:'pending', wr:'—', bg:bgs[state.friends.length%bgs.length] });
   input.value = '';
   renderFriends();
 }
 
-document.getElementById('friend-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addFriend();
-});
+document.getElementById('friend-input').addEventListener('keydown', e => { if (e.key === 'Enter') addFriend(); });
 
 // ─── Account render ───────────────────────────────────────────────────────────
 function renderAccount() {
-  const total   = state.wins + state.losses;
-  const winRate = total ? Math.round((state.wins / state.losses + state.wins) * 100 / total) : 0;
-  const wr      = total ? Math.round(state.wins / total * 100) : 0;
-
+  const total = state.wins + state.losses;
+  const wr    = total ? Math.round(state.wins / total * 100) : 0;
   document.getElementById('wins-num').textContent    = state.wins;
   document.getElementById('losses-num').textContent  = state.losses;
   document.getElementById('win-rate').textContent    = wr + '%';
@@ -1269,16 +801,14 @@ function renderAccount() {
   document.getElementById('total-bets').textContent  = total + ' settled';
   document.getElementById('promo-cash').textContent  = money(state.promoCash);
   document.getElementById('gems-count').textContent  = state.gems.toLocaleString('en-US');
-
-  renderPacks();
-  updateBuyBtn();
-  renderFriends();
+  renderPacks(); updateBuyBtn(); renderFriends();
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 document.getElementById('home-balance').textContent = money(state.promoCash);
 renderPacks();
 renderFriends();
+fetchGames('NBA');
 </script>
 </body>
 </html>

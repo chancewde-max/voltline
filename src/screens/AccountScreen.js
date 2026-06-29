@@ -247,10 +247,8 @@ function PackCard({ pack, selected, onPress }) {
         <SmallGemIcon />
         <Text style={s.packGems}>{pack.gems}</Text>
       </View>
-      <View style={s.packPriceRow}>
-        <Text style={s.packPrice}>{money(pack.price)}</Text>
-        <Text style={s.packPromo}>+{money(pack.price)}</Text>
-      </View>
+      <Text style={s.packPromoCash}>+{money(pack.price)} promo cash</Text>
+      <Text style={s.packPrice}>{money(pack.price)}</Text>
     </TouchableOpacity>
   );
 }
@@ -328,9 +326,8 @@ const s = StyleSheet.create({
   popularTxt:     { fontFamily: F.monoBd, fontSize: 8, color: '#03060a', letterSpacing: 0.6 },
   packGemsRow:    { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 7 },
   packGems:       { fontFamily: F.monoBd, fontSize: 16, color: C.white },
-  packPriceRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  packPromoCash:  { fontFamily: F.mono, fontSize: 10, color: C.green, marginBottom: 4 },
   packPrice:      { fontFamily: F.monoBd, fontSize: 12, color: C.muted },
-  packPromo:      { fontFamily: F.mono, fontSize: 10, color: C.green },
 
   explainer:      { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 10, padding: 9, paddingHorizontal: 12, backgroundColor: 'rgba(0,230,118,0.05)', borderWidth: 1, borderColor: C.greenBorder, borderRadius: 10 },
   explainerTxt:   { flex: 1, fontFamily: F.grotesk, fontSize: 10, lineHeight: 15, color: '#7fd8a8' },
