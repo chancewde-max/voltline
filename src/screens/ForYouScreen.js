@@ -8,7 +8,6 @@ import { C, F, SCREEN_W, money } from '../constants';
 import { ESPN_URLS, parseESPN, FALLBACK } from '../bets';
 import BottomNav from '../components/BottomNav';
 import Ticker from '../components/Ticker';
-import BetSlip from '../components/BetSlip';
 import GameCard from '../components/GameCard';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -73,18 +72,17 @@ export default function ForYouScreen({ promoCash, gameTime, navigate, betSlip, o
       try {
         if (url) {
           const data = await fetch(url).then(r => r.json());
-          all.push(...parseESPN(data, sport));
-        } else if (FALLBACK[sport]) {
-          all.push(...FALLBACK[sport]);
+          const parsed = parseESPN(data, sport);
+          all.push(...(parsed.length > 0 ? parsed : (FALLBACK[sport] || [])));
+        } else {
+          all.push(...(FALLBACK[sport] || []));
         }
       } catch {
-        if (FALLBACK[sport]) all.push(...FALLBACK[sport]);
+        all.push(...(FALLBACK[sport] || []));
       }
     }));
 
-    // Only suggest games you can still bet on (Final games are locked).
-    const bettable = all.filter(g => !g.isFinal);
-    setSuggestions(rankSuggestions(bettable, placedBets));
+    setSuggestions(rankSuggestions(all, placedBets));
     setLoading(false);
   }, [placedBets]);
 
@@ -159,9 +157,10 @@ export default function ForYouScreen({ promoCash, gameTime, navigate, betSlip, o
                 key={game.id}
                 game={game}
                 betSlip={betSlip}
-                onAddBet={onAddBet}
+                onAddBet={game.isFinal ? undefined : onAddBet}
                 reason={reason}
                 style={s.feedCard}
+                onCardPress={() => navigate('live')}
               />
             ))}
           </View>
@@ -170,7 +169,6 @@ export default function ForYouScreen({ promoCash, gameTime, navigate, betSlip, o
         <View style={{ height: 16 }} />
       </ScrollView>
 
-      <BetSlip betSlip={betSlip} onAddBet={onAddBet} onPlaceBet={onPlaceBet} promoCash={promoCash} />
       <Ticker bosTime={gameTime} />
       <BottomNav current="home" navigate={navigate} />
     </View>

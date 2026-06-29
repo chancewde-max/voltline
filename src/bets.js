@@ -74,12 +74,26 @@ export function parseESPN(data, sport) {
 }
 
 export const FALLBACK = {
+  NBA: [
+    { id: 'nb1', sport: 'NBA', period: '8:00 PM', isLive: false, isFinal: false, teams: [{ abbr: 'BOS', score: '—', leading: false }, { abbr: 'NYK', score: '—', leading: false }], awayOdds: '-140', homeOdds: '+118' },
+    { id: 'nb2', sport: 'NBA', period: '10:30 PM', isLive: false, isFinal: false, teams: [{ abbr: 'LAL', score: '—', leading: false }, { abbr: 'GSW', score: '—', leading: false }], awayOdds: '+105', homeOdds: '-125' },
+  ],
+  NFL: [
+    { id: 'nf1', sport: 'NFL', period: 'Sun 1:00 PM', isLive: false, isFinal: false, teams: [{ abbr: 'KC', score: '—', leading: false }, { abbr: 'BUF', score: '—', leading: false }], awayOdds: '-110', homeOdds: '-110' },
+    { id: 'nf2', sport: 'NFL', period: 'Sun 4:25 PM', isLive: false, isFinal: false, teams: [{ abbr: 'SF', score: '—', leading: false }, { abbr: 'DAL', score: '—', leading: false }], awayOdds: '-155', homeOdds: '+132' },
+  ],
+  NHL: [
+    { id: 'nh1', sport: 'NHL', period: '7:00 PM', isLive: false, isFinal: false, teams: [{ abbr: 'TOR', score: '—', leading: false }, { abbr: 'MTL', score: '—', leading: false }], awayOdds: '+120', homeOdds: '-142' },
+  ],
+  Soccer: [
+    { id: 's1', sport: 'Soccer', period: '● 67\'', isLive: true,  isFinal: false, teams: [{ abbr: 'MCI', score: '2', leading: true  }, { abbr: 'ARS', score: '1', leading: false }], awayOdds: '-165', homeOdds: '+140' },
+  ],
   Tennis: [
-    { id: 't1', sport: 'Tennis', period: '● Set 2', isLive: true,  teams: [{ abbr: 'DJO', score: '6', leading: true  }, { abbr: 'ALC', score: '4', leading: false }], awayOdds: '-155', homeOdds: '+130' },
-    { id: 't2', sport: 'Tennis', period: 'Final',   isLive: false, isFinal: true, teams: [{ abbr: 'SIN', score: '3', leading: false }, { abbr: 'MED', score: '3', leading: false }], awayOdds: '+110', homeOdds: '-125' },
+    { id: 't1', sport: 'Tennis', period: '● Set 2', isLive: true,  isFinal: false, teams: [{ abbr: 'DJO', score: '6', leading: true  }, { abbr: 'ALC', score: '4', leading: false }], awayOdds: '-155', homeOdds: '+130' },
+    { id: 't2', sport: 'Tennis', period: 'Final',   isLive: false, isFinal: true,  teams: [{ abbr: 'SIN', score: '3', leading: false }, { abbr: 'MED', score: '3', leading: false }], awayOdds: '+110', homeOdds: '-125' },
   ],
   Boxing: [
-    { id: 'b1', sport: 'Boxing', period: '● Rd 8',  isLive: true,  teams: [{ abbr: 'FUR', score: '—', leading: false }, { abbr: 'USY', score: '—', leading: false }], awayOdds: '+240', homeOdds: '-285' },
+    { id: 'b1', sport: 'Boxing', period: '● Rd 8',  isLive: true,  isFinal: false, teams: [{ abbr: 'FUR', score: '—', leading: false }, { abbr: 'USY', score: '—', leading: false }], awayOdds: '+240', homeOdds: '-285' },
   ],
 };
 

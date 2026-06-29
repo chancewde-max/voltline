@@ -4,11 +4,12 @@ import { C, F } from '../constants';
 
 // A single game tile with tappable moneyline odds. Shared by the Live
 // browser (grid) and the For You feed (full-width, with a reason tag).
-export default function GameCard({ game, featured, betSlip, onAddBet, style, reason }) {
+export default function GameCard({ game, featured, betSlip, onAddBet, style, reason, onCardPress }) {
   const locked = game.isFinal;
 
   const handleTeamPress = (teamIdx) => {
     if (locked) return;
+    if (onCardPress) { onCardPress(); return; }
     const team     = game.teams[teamIdx];
     const opponent = game.teams[1 - teamIdx];
     const odds     = teamIdx === 0 ? game.awayOdds : game.homeOdds;
