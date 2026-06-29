@@ -219,13 +219,126 @@
   .wr-number { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: #00f0f5; }
   .wr-number.pending { color: #3d4e6e; }
   .wr-label { font-size: 8px; color: #3d4e6e; text-transform: uppercase; letter-spacing: .1em; }
+
+  /* FOR YOU */
+  .foryou-banner-wrap { height: 25vh; min-height: 150px; max-height: 230px; flex-shrink: 0; padding: 8px 0 4px; }
+  .foryou-banners { display: flex; gap: 12px; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 18px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .promo-slide { scroll-snap-align: center; flex: 0 0 calc(100% - 36px); height: 100%; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; justify-content: flex-end; cursor: pointer; box-shadow: 0 8px 28px rgba(0,80,255,.25); }
+  .promo-tag { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .15em; color: rgba(255,255,255,.85); margin-bottom: 6px; }
+  .promo-title { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; color: #fff; letter-spacing: .02em; line-height: 1.05; }
+  .promo-sub { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.9); margin-top: 4px; }
+  .promo-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+  .promo-dot { width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.2); transition: width .2s, background .2s; }
+  .promo-dot.active { width: 16px; background: #00f0f5; }
+  .foryou-head { display: flex; align-items: flex-end; justify-content: space-between; padding: 14px 18px 10px; flex-shrink: 0; }
+  .foryou-title { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: .1em; color: #eef2ff; text-transform: uppercase; }
+  .foryou-sub { font-size: 11px; color: #4a5a7a; }
+  .foryou-feed { flex: 1; overflow-y: auto; padding: 0 18px 116px; display: flex; flex-direction: column; gap: 10px; }
+  .foryou-card { animation: slide-in .4s ease-out both; }
+  .foryou-card .reason { font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #00f0f5; margin-bottom: 8px; }
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- HOME SCREEN -->
+  <!-- FOR YOU (HOME) SCREEN -->
   <div class="screen" id="screen-home">
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div class="status-icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
+        <span class="status-5g">5G</span>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
+      </div>
+    </div>
+    <div class="home-header">
+      <span class="brand">VOLT<span>LINE</span></span>
+      <div class="header-right">
+        <div>
+          <div class="balance-label">Balance</div>
+          <div class="balance-amount" id="foryou-balance">$0.00</div>
+        </div>
+        <div class="avatar" onclick="navigate('account')">JD</div>
+      </div>
+    </div>
+
+    <!-- Promo banner (1/4 of the page) -->
+    <div class="foryou-banner-wrap">
+      <div class="foryou-banners" id="promo-banners" onscroll="updatePromoDots()">
+        <div class="promo-slide" style="background:linear-gradient(135deg,#00c0c8,#0050ff)">
+          <div class="promo-tag">WELCOME</div>
+          <div class="promo-title">Deposit match</div>
+          <div class="promo-sub">100% promo cash on your first gem pack</div>
+        </div>
+        <div class="promo-slide" style="background:linear-gradient(135deg,#7b5cff,#0050ff)">
+          <div class="promo-tag">PARLAY BOOST</div>
+          <div class="promo-title">+25% on 3+ legs</div>
+          <div class="promo-sub">Extra promo cash on every winning parlay</div>
+        </div>
+        <div class="promo-slide" style="background:linear-gradient(135deg,#ff6a3d,#ff2952)">
+          <div class="promo-tag">DAILY</div>
+          <div class="promo-title">Free spin</div>
+          <div class="promo-sub">Come back each day for bonus gems</div>
+        </div>
+      </div>
+      <div class="promo-dots" id="promo-dots">
+        <div class="promo-dot active"></div><div class="promo-dot"></div><div class="promo-dot"></div>
+      </div>
+    </div>
+
+    <div class="foryou-head">
+      <span class="foryou-title">For You</span>
+      <span class="foryou-sub" id="foryou-sub">Popular right now</span>
+    </div>
+    <div class="foryou-feed" id="foryou-feed">
+      <div class="games-loading"><div class="spinner"></div> Loading...</div>
+    </div>
+
+    <!-- Ticker -->
+    <div class="ticker-bar">
+      <div class="ticker-track">
+        <span class="ticker-item hot">● LAL 108 – BOS 112 Q4 2:34</span>
+        <span class="ticker-item dim">GSW 89 – MIL 94 Q3 5:12</span>
+        <span class="ticker-item dim">MIA 76 – NYK 81 H2 3:22</span>
+        <span class="ticker-item dim">KC 24 – SF 17 3Q 8:45</span>
+        <span class="ticker-item dim">MCI 1 – ARS 2 72'</span>
+        <span class="ticker-item win">PHX 98 – DAL 101 Q4 1:54</span>
+        <span class="ticker-item hot">● LAL 108 – BOS 112 Q4 2:34</span>
+        <span class="ticker-item dim">GSW 89 – MIL 94 Q3 5:12</span>
+        <span class="ticker-item dim">MIA 76 – NYK 81 H2 3:22</span>
+        <span class="ticker-item dim">KC 24 – SF 17 3Q 8:45</span>
+        <span class="ticker-item dim">MCI 1 – ARS 2 72'</span>
+        <span class="ticker-item win">PHX 98 – DAL 101 Q4 1:54</span>
+      </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="navigate('home')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label active">Home</span>
+      </div>
+      <div class="nav-item" onclick="navigate('live')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
+        <span class="nav-label">Live</span>
+      </div>
+      <div class="nav-item" onclick="navigate('home')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
+        <span class="nav-label">Casino</span>
+      </div>
+      <div class="nav-item" onclick="navigate('bets')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="4" width="13" height="12" rx="2" stroke="#3d4e6e" stroke-width="1.5"/><path d="M7 8.5h6M7 12h4" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="nav-label">Bets</span>
+      </div>
+      <div class="nav-item" onclick="navigate('account')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7.5" r="3" stroke="#3d4e6e" stroke-width="1.5"/><path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="nav-label">Account</span>
+      </div>
+    </div>
+  </div><!-- /screen-home (For You) -->
+
+  <!-- LIVE SCREEN (sports browser) -->
+  <div class="screen hidden-right" id="screen-live">
     <div class="status-bar">
       <span class="status-time">9:41</span>
       <div class="status-icons">
@@ -266,18 +379,6 @@
       <div id="games-container"></div>
     </div>
 
-    <!-- Bet slip bar (above ticker) -->
-    <div class="bet-slip-bar" id="slip-bar" onclick="openSlip()">
-      <div class="slip-bar-left">
-        <div class="slip-badge" id="slip-badge">0</div>
-        <span class="slip-bar-label" id="slip-bar-label">BET SLIP</span>
-      </div>
-      <div style="text-align:right">
-        <div id="slip-bar-odds" style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#00f0f5"></div>
-        <span class="slip-bar-cta">VIEW SLIP ↑</span>
-      </div>
-    </div>
-
     <!-- Ticker -->
     <div class="ticker-bar" id="ticker-bar">
       <div class="ticker-track" id="ticker">
@@ -298,13 +399,13 @@
 
     <!-- Bottom nav -->
     <div class="bottom-nav" id="home-nav">
-      <div class="nav-item active" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span class="nav-label active">Home</span>
-      </div>
       <div class="nav-item" onclick="navigate('home')">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
-        <span class="nav-label">Live</span>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item active" onclick="navigate('live')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#00f0f5" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#00f0f5"/></svg>
+        <span class="nav-label active">Live</span>
       </div>
       <div class="nav-item" onclick="navigate('home')">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
@@ -320,36 +421,7 @@
       </div>
     </div>
 
-    <!-- Bet slip modal -->
-    <div class="slip-modal" id="slip-modal" onclick="closeSlipIfOverlay(event)">
-      <div class="slip-sheet">
-        <div class="sheet-handle"></div>
-        <div class="sheet-head">
-          <div class="sheet-head-left">
-            <span class="sheet-title">BET SLIP</span>
-            <div class="type-badge" id="slip-type-badge">STRAIGHT</div>
-            <span id="slip-combined-odds" style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#00f0f5"></span>
-          </div>
-          <span class="sheet-close" onclick="closeSlip()">✕</span>
-        </div>
-        <div id="slip-bets"></div>
-        <div id="parlay-note" style="display:none" class="parlay-note"></div>
-        <div class="stake-row">
-          <div class="stake-input-wrap">
-            <span class="stake-dollar">$</span>
-            <input class="stake-input" id="stake-input" type="number" min="0" step="0.01" placeholder="0.00" oninput="updatePayout()">
-          </div>
-          <div class="payout-box">
-            <div class="payout-label">To Win</div>
-            <div class="payout-amt" id="payout-amt">—</div>
-          </div>
-        </div>
-        <div id="insufficient-msg" style="display:none" class="insufficient-msg"></div>
-        <div class="place-btn" id="place-bet-btn" onclick="placeSlip()">PLACE BET</div>
-      </div>
-    </div>
-
-  </div><!-- /screen-home -->
+  </div><!-- /screen-live -->
 
   <!-- BETS SCREEN -->
   <div class="screen hidden-right" id="screen-bets">
@@ -387,7 +459,7 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="nav-label">Home</span>
       </div>
-      <div class="nav-item" onclick="navigate('home')">
+      <div class="nav-item" onclick="navigate('live')">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
         <span class="nav-label">Live</span>
       </div>
@@ -484,7 +556,7 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="nav-label">Home</span>
       </div>
-      <div class="nav-item" onclick="navigate('home')">
+      <div class="nav-item" onclick="navigate('live')">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
         <span class="nav-label">Live</span>
       </div>
@@ -502,6 +574,47 @@
       </div>
     </div>
   </div><!-- /screen-account -->
+
+  <!-- Shared bet slip bar (above ticker; shows on Home/Live) -->
+  <div class="bet-slip-bar" id="slip-bar" onclick="openSlip()">
+    <div class="slip-bar-left">
+      <div class="slip-badge" id="slip-badge">0</div>
+      <span class="slip-bar-label" id="slip-bar-label">BET SLIP</span>
+    </div>
+    <div style="text-align:right">
+      <div id="slip-bar-odds" style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#00f0f5"></div>
+      <span class="slip-bar-cta">VIEW SLIP ↑</span>
+    </div>
+  </div>
+
+  <!-- Shared bet slip modal -->
+  <div class="slip-modal" id="slip-modal" onclick="closeSlipIfOverlay(event)">
+    <div class="slip-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div class="sheet-head-left">
+          <span class="sheet-title">BET SLIP</span>
+          <div class="type-badge" id="slip-type-badge">STRAIGHT</div>
+          <span id="slip-combined-odds" style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#00f0f5"></span>
+        </div>
+        <span class="sheet-close" onclick="closeSlip()">✕</span>
+      </div>
+      <div id="slip-bets"></div>
+      <div id="parlay-note" style="display:none" class="parlay-note"></div>
+      <div class="stake-row">
+        <div class="stake-input-wrap">
+          <span class="stake-dollar">$</span>
+          <input class="stake-input" id="stake-input" type="number" min="0" step="0.01" placeholder="0.00" oninput="updatePayout()">
+        </div>
+        <div class="payout-box">
+          <div class="payout-label">To Win</div>
+          <div class="payout-amt" id="payout-amt">—</div>
+        </div>
+      </div>
+      <div id="insufficient-msg" style="display:none" class="insufficient-msg"></div>
+      <div class="place-btn" id="place-bet-btn" onclick="placeSlip()">PLACE BET</div>
+    </div>
+  </div>
 
 </div><!-- /app -->
 
@@ -614,7 +727,7 @@ function parseESPN(data, sport) {
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-const SCREEN_ORDER = ['home', 'bets', 'account'];
+const SCREEN_ORDER = ['home', 'live', 'bets', 'account'];
 function navigate(screen) {
   const from = document.getElementById('screen-' + state.screen);
   const to   = document.getElementById('screen-' + screen);
@@ -625,8 +738,114 @@ function navigate(screen) {
   from.classList.add(goRight ? 'hidden-left' : 'hidden-right');
   to.classList.remove('hidden-left', 'hidden-right');
   state.screen = screen;
+  closeSlip();
+  if (screen === 'home')    renderForYou();
   if (screen === 'account') renderAccount();
-  if (screen === 'bets') renderBets();
+  if (screen === 'bets')    renderBets();
+  updateSlipBar();
+}
+
+// ─── For You feed ─────────────────────────────────────────────────────────────
+const DEFAULT_FORYOU_SPORTS = ['NBA', 'NFL', 'NHL'];
+
+function updateBalances() {
+  const v = money(state.promoCash);
+  const a = document.getElementById('home-balance');   if (a) a.textContent = v;
+  const b = document.getElementById('foryou-balance'); if (b) b.textContent = v;
+}
+
+function updatePromoDots() {
+  const wrap = document.getElementById('promo-banners');
+  const dots = document.querySelectorAll('#promo-dots .promo-dot');
+  if (!wrap || !dots.length) return;
+  const idx = Math.round(wrap.scrollLeft / wrap.clientWidth);
+  dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+}
+
+// Rank live/upcoming games by how well they match the user's betting history.
+function rankForYou(games, history) {
+  const teamFreq = {}, sportFreq = {};
+  history.forEach(b => b.legs.forEach(l => {
+    teamFreq[l.teamAbbr] = (teamFreq[l.teamAbbr] || 0) + 1;
+    sportFreq[l.sport]   = (sportFreq[l.sport] || 0) + 1;
+  }));
+  return games.map(g => {
+    const fav = g.teams.find(t => teamFreq[t.abbr]);
+    let score = 0, reason = 'Trending pick';
+    if (fav) { score += 100 + teamFreq[fav.abbr] * 10; reason = 'Because you bet ' + fav.abbr; }
+    else if (sportFreq[g.sport]) { score += 40 + sportFreq[g.sport] * 5; reason = 'More ' + g.sport + ' for you'; }
+    if (g.isLive) score += 8;
+    return { game: g, reason, score };
+  }).sort((a, b) => b.score - a.score).slice(0, 6);
+}
+
+async function renderForYou() {
+  const feed  = document.getElementById('foryou-feed');
+  const subEl = document.getElementById('foryou-sub');
+  if (!feed) return;
+  const hasHistory = state.placedBets.length > 0;
+  if (subEl) subEl.textContent = hasHistory ? 'Based on your bets' : 'Popular right now';
+  if (!state.forYouGames) feed.innerHTML = '<div class="games-loading"><div class="spinner"></div> Loading...</div>';
+
+  // Sports the user has wagered on (by frequency), plus defaults so it's never empty.
+  const sportFreq = {};
+  state.placedBets.forEach(b => b.legs.forEach(l => { sportFreq[l.sport] = (sportFreq[l.sport] || 0) + 1; }));
+  const fromHistory = Object.keys(sportFreq).sort((a, b) => sportFreq[b] - sportFreq[a]);
+  const sports = [...new Set([...fromHistory, ...DEFAULT_FORYOU_SPORTS])].slice(0, 4);
+
+  const all = [];
+  await Promise.all(sports.map(async sport => {
+    const url = ESPN_URLS[sport];
+    try {
+      if (url) { const data = await fetch(url).then(r => r.json()); all.push(...parseESPN(data, sport)); }
+      else if (FALLBACK_GAMES[sport]) all.push(...FALLBACK_GAMES[sport]);
+    } catch { if (FALLBACK_GAMES[sport]) all.push(...FALLBACK_GAMES[sport]); }
+  }));
+
+  // Only suggest games you can still bet on (Final games are locked).
+  const bettable = all.filter(g => !g.isFinal);
+  state.forYouGames = rankForYou(bettable, state.placedBets);
+  renderForYouCards();
+}
+
+function renderForYouCards() {
+  const feed = document.getElementById('foryou-feed');
+  if (!feed) return;
+  const list = state.forYouGames || [];
+  if (list.length === 0) {
+    feed.innerHTML = '<div class="games-empty">No suggestions right now — check the Live tab.</div>';
+    return;
+  }
+  feed.innerHTML = list.map(({ game, reason }, idx) => {
+    const inSlip = state.betSlip.some(b => b.gameId === game.id);
+    return `
+      <div class="game-card foryou-card${inSlip ? ' in-slip' : ''}" style="animation-delay:${idx * 0.06}s">
+        <div class="reason">${reason}</div>
+        <div class="game-card-header">
+          <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
+          <span class="game-sport">${game.sport}</span>
+        </div>
+        ${game.teams.map((t, i) => {
+          const odds = i === 0 ? game.awayOdds : game.homeOdds;
+          const sel  = state.betSlip.some(b => b.id === game.id + '-' + t.abbr);
+          const leadClass = t.lead ? ' leading' : '';
+          return `
+            <div class="game-team-row" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${game.sport}')">
+              <span class="team-abbr${leadClass}">${t.abbr}</span>
+              <div class="team-right">
+                <span class="team-score${leadClass}">${t.score}</span>
+                <span class="odds-btn${sel ? ' sel' : ''}">${odds}</span>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+}
+
+// Refresh whichever board is currently showing after a slip change.
+function refreshActiveBoard() {
+  if (state.screen === 'home') renderForYouCards();
+  else fetchGames(state.activeSport);
 }
 
 // ─── Sport switching & ESPN fetch ─────────────────────────────────────────────
@@ -711,7 +930,7 @@ function toggleBet(gameId, teamAbbr, opponent, odds, sport) {
   }
   updateSlipBar();
   // Re-render to refresh card border + odds highlights
-  fetchGames(state.activeSport);
+  refreshActiveBoard();
 }
 
 function updateSlipBar() {
@@ -721,7 +940,8 @@ function updateSlipBar() {
   const n     = state.betSlip.length;
   const isParlay = n >= 2;
 
-  if (n === 0) {
+  // Slip bar only belongs on the betting screens (For You / Live).
+  if (n === 0 || !(state.screen === 'home' || state.screen === 'live')) {
     bar.classList.remove('show', 'parlay');
     return;
   }
@@ -796,7 +1016,7 @@ function removeBet(betId) {
   updateSlipBar();
   if (state.betSlip.length === 0) { closeSlip(); return; }
   renderSlipModal();
-  fetchGames(state.activeSport);
+  refreshActiveBoard();
 }
 
 function calcPayout(stakeAmt, bets) {
@@ -855,7 +1075,7 @@ function placeSlip() {
   });
 
   state.promoCash = Math.max(0, state.promoCash - stakeNum);
-  document.getElementById('home-balance').textContent = money(state.promoCash);
+  updateBalances();
   stakeEl.value = '';
   document.getElementById('payout-amt').textContent = '—';
   document.getElementById('payout-amt').className   = 'payout-amt';
@@ -863,7 +1083,7 @@ function placeSlip() {
   state.betSlip = [];
   closeSlip();
   updateSlipBar();
-  fetchGames(state.activeSport);
+  refreshActiveBoard();
 }
 
 function renderBets() {
@@ -1054,7 +1274,7 @@ function buyPack() {
   state.promoCash += pack.price;
   document.getElementById('promo-cash').textContent   = money(state.promoCash);
   document.getElementById('gems-count').textContent   = state.gems.toLocaleString('en-US');
-  document.getElementById('home-balance').textContent = money(state.promoCash);
+  updateBalances();
   showToast(`+${pack.gems} gems · ${money(pack.price)} promo cash added`);
 }
 
@@ -1120,10 +1340,11 @@ function renderAccount() {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-document.getElementById('home-balance').textContent = money(state.promoCash);
+updateBalances();
 renderPacks();
 renderFriends();
-fetchGames('NBA');
+fetchGames('NBA');   // preload the Live board
+renderForYou();      // build the For You landing feed
 </script>
 </body>
 </html>
