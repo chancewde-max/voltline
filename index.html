@@ -118,8 +118,20 @@
   .slip-bet-odds { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; color: #00f0f5; flex-shrink: 0; }
   .slip-remove { font-size: 14px; color: #3d4e6e; cursor: pointer; padding: 4px; flex-shrink: 0; }
   .parlay-note { margin-top: 4px; padding: 8px 12px; background: rgba(123,92,255,.1); border: 1px solid rgba(123,92,255,.2); border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 11px; color: #a78bff; }
-  .place-btn { display: block; width: 100%; margin-top: 14px; padding: 14px; background: linear-gradient(90deg,#00c0c8,#0050ff); border-radius: 12px; text-align: center; font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: .06em; color: white; cursor: pointer; transition: opacity .15s; -webkit-tap-highlight-color: transparent; }
+  .stake-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.06); }
+  .stake-input-wrap { flex: 1; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 0 12px; }
+  .stake-dollar { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: #c0cae0; }
+  .stake-input { flex: 1; background: transparent; border: none; outline: none; font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; color: #eef2ff; padding: 11px 0; width: 100%; }
+  .stake-input::placeholder { color: #4a5a7a; }
+  .stake-input::-webkit-inner-spin-button, .stake-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .payout-box { text-align: right; min-width: 90px; }
+  .payout-label { font-size: 9px; color: #4a5a7a; text-transform: uppercase; letter-spacing: .08em; }
+  .payout-amt { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: #4a5a7a; margin-top: 1px; }
+  .payout-amt.has-value { color: #00e676; }
+  .insufficient-msg { font-family: 'Space Mono', monospace; font-size: 10px; color: #ff2952; margin-top: 6px; }
+  .place-btn { display: block; width: 100%; margin-top: 12px; padding: 14px; background: linear-gradient(90deg,#00c0c8,#0050ff); border-radius: 12px; text-align: center; font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: .06em; color: white; cursor: pointer; transition: opacity .15s, background .15s; -webkit-tap-highlight-color: transparent; }
   .place-btn:active { opacity: .85; }
+  .place-btn.disabled { background: #1e1e30; color: #4a5a7a; cursor: default; }
 
   /* ACCOUNT */
   .account-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 18px 12px; flex-shrink: 0; }
@@ -312,7 +324,18 @@
         </div>
         <div id="slip-bets"></div>
         <div id="parlay-note" style="display:none" class="parlay-note"></div>
-        <div class="place-btn" onclick="placeSlip()">PLACE BET</div>
+        <div class="stake-row">
+          <div class="stake-input-wrap">
+            <span class="stake-dollar">$</span>
+            <input class="stake-input" id="stake-input" type="number" min="0" step="0.01" placeholder="0.00" oninput="updatePayout()">
+          </div>
+          <div class="payout-box">
+            <div class="payout-label">To Win</div>
+            <div class="payout-amt" id="payout-amt">—</div>
+          </div>
+        </div>
+        <div id="insufficient-msg" style="display:none" class="insufficient-msg"></div>
+        <div class="place-btn" id="place-bet-btn" onclick="placeSlip()">PLACE BET</div>
       </div>
     </div>
 
@@ -646,6 +669,9 @@ function updateSlipBar() {
 function openSlip() {
   renderSlipModal();
   document.getElementById('slip-modal').classList.add('open');
+  // Reset stake state on open
+  const stakeEl = document.getElementById('stake-input');
+  if (stakeEl && !stakeEl.value) updatePayout();
 }
 
 function closeSlip() {
@@ -690,7 +716,55 @@ function removeBet(betId) {
   fetchGames(state.activeSport);
 }
 
+function calcPayout(stakeAmt, bets) {
+  if (!stakeAmt || bets.length === 0) return 0;
+  if (bets.length === 1) {
+    const o = parseInt(bets[0].odds);
+    return o > 0 ? stakeAmt * (o / 100) : stakeAmt * (100 / Math.abs(o));
+  }
+  const mult = bets.reduce((acc, b) => {
+    const o = parseInt(b.odds);
+    return acc * (o > 0 ? 1 + o / 100 : 1 + 100 / Math.abs(o));
+  }, 1);
+  return stakeAmt * mult - stakeAmt;
+}
+
+function updatePayout() {
+  const stakeEl  = document.getElementById('stake-input');
+  const payoutEl = document.getElementById('payout-amt');
+  const msgEl    = document.getElementById('insufficient-msg');
+  const placeBtn = document.getElementById('place-bet-btn');
+  const stakeNum = parseFloat(stakeEl.value) || 0;
+  const payout   = calcPayout(stakeNum, state.betSlip);
+  const canPlace  = stakeNum > 0 && stakeNum <= state.promoCash;
+
+  if (stakeNum > 0) {
+    payoutEl.textContent = money(payout);
+    payoutEl.className   = 'payout-amt has-value';
+  } else {
+    payoutEl.textContent = '—';
+    payoutEl.className   = 'payout-amt';
+  }
+  if (stakeNum > state.promoCash && stakeNum > 0) {
+    msgEl.textContent = `Insufficient funds · Balance: ${money(state.promoCash)}`;
+    msgEl.style.display = 'block';
+  } else {
+    msgEl.style.display = 'none';
+  }
+  placeBtn.className = 'place-btn' + (canPlace ? '' : ' disabled');
+}
+
 function placeSlip() {
+  const stakeEl  = document.getElementById('stake-input');
+  const stakeNum = parseFloat(stakeEl.value) || 0;
+  if (stakeNum <= 0 || stakeNum > state.promoCash) return;
+
+  state.promoCash = Math.max(0, state.promoCash - stakeNum);
+  document.getElementById('home-balance').textContent = money(state.promoCash);
+  stakeEl.value = '';
+  document.getElementById('payout-amt').textContent = '—';
+  document.getElementById('payout-amt').className   = 'payout-amt';
+  document.getElementById('place-bet-btn').className = 'place-btn disabled';
   state.betSlip = [];
   closeSlip();
   updateSlipBar();

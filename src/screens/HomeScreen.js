@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity,
-  ActivityIndicator, Modal,
+  ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -85,12 +85,26 @@ const FALLBACK = {
   ],
 };
 
-export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, betSlip, onAddBet }) {
+function calcPayout(stakeAmt, bets) {
+  if (!stakeAmt || bets.length === 0) return 0;
+  if (bets.length === 1) {
+    const o = parseInt(bets[0].odds);
+    return o > 0 ? stakeAmt * (o / 100) : stakeAmt * (100 / Math.abs(o));
+  }
+  const mult = bets.reduce((acc, b) => {
+    const o = parseInt(b.odds);
+    return acc * (o > 0 ? 1 + o / 100 : 1 + 100 / Math.abs(o));
+  }, 1);
+  return stakeAmt * mult - stakeAmt;
+}
+
+export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, betSlip, onAddBet, onPlaceBet }) {
   const insets = useSafeAreaInsets();
   const [activeSport, setActiveSport] = useState('NBA');
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [slipOpen, setSlipOpen] = useState(false);
+  const [stake, setStake] = useState('');
   const slipAnim = useRef(new Animated.Value(0)).current;
 
   const dotScale   = useRef(new Animated.Value(1)).current;
@@ -137,6 +151,10 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
   const closeSlip = () => {
     Animated.timing(slipAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setSlipOpen(false));
   };
+
+  const stakeNum = parseFloat(stake) || 0;
+  const payout   = calcPayout(stakeNum, betSlip);
+  const canPlace  = stakeNum > 0 && stakeNum <= promoCash;
 
   const liveCount = games.filter(g => g.isLive).length;
   const isParlay  = betSlip.length >= 2;
@@ -212,6 +230,7 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
 
       {/* Bet Slip Modal */}
       <Modal visible={slipOpen} transparent animationType="none" onRequestClose={closeSlip}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={closeSlip}>
           <Animated.View
             style={[s.sheet, { transform: [{ translateY: slipAnim.interpolate({ inputRange: [0, 1], outputRange: [500, 0] }) }] }]}
@@ -249,13 +268,54 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
               </View>
             )}
 
-            <LinearGradient colors={['#00c0c8', '#0050ff']} style={s.placeBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-              <TouchableOpacity style={s.placeBtnInner} activeOpacity={0.85}>
-                <Text style={s.placeBtnTxt}>PLACE {isParlay ? 'PARLAY' : 'BET'}</Text>
+            {/* Stake row */}
+            <View style={s.stakeRow}>
+              <View style={s.stakeWrap}>
+                <Text style={s.stakeDollar}>$</Text>
+                <TextInput
+                  style={s.stakeInput}
+                  value={stake}
+                  onChangeText={setStake}
+                  placeholder="0.00"
+                  placeholderTextColor={C.dim}
+                  keyboardType="decimal-pad"
+                  maxLength={9}
+                />
+              </View>
+              <View style={s.payoutBox}>
+                <Text style={s.payoutLabel}>To Win</Text>
+                <Text style={[s.payoutAmt, canPlace && { color: C.green }]}>
+                  {stakeNum > 0 ? money(payout) : '—'}
+                </Text>
+              </View>
+            </View>
+            {stakeNum > promoCash && stakeNum > 0 && (
+              <Text style={s.insufficientTxt}>Insufficient funds · Balance: {money(promoCash)}</Text>
+            )}
+
+            <LinearGradient
+              colors={canPlace ? ['#00c0c8', '#0050ff'] : ['#2a2a3e', '#2a2a3e']}
+              style={s.placeBtn}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            >
+              <TouchableOpacity
+                style={s.placeBtnInner}
+                activeOpacity={canPlace ? 0.85 : 1}
+                onPress={() => {
+                  if (!canPlace) return;
+                  onPlaceBet(stakeNum);
+                  setStake('');
+                  closeSlip();
+                }}
+              >
+                <Text style={[s.placeBtnTxt, !canPlace && { color: C.dim }]}>
+                  PLACE {isParlay ? 'PARLAY' : 'BET'}
+                </Text>
               </TouchableOpacity>
             </LinearGradient>
           </Animated.View>
         </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -388,7 +448,15 @@ const s = StyleSheet.create({
   slipXTxt:        { fontFamily: F.grotesk, fontSize: 13, color: C.dimmer },
   parlayNote:      { paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'rgba(123,92,255,0.1)', borderRadius: 8, marginTop: 4, borderWidth: 1, borderColor: 'rgba(123,92,255,0.2)' },
   parlayNoteTxt:   { fontFamily: F.mono, fontSize: 11, color: '#a78bff' },
-  placeBtn:        { borderRadius: 12, overflow: 'hidden', marginTop: 14 },
+  stakeRow:        { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 14 },
+  stakeWrap:       { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 10, paddingHorizontal: 12 },
+  stakeDollar:     { fontFamily: F.monoBd, fontSize: 16, color: C.muted },
+  stakeInput:      { flex: 1, fontFamily: F.monoBd, fontSize: 18, color: C.white, paddingVertical: 11 },
+  payoutBox:       { alignItems: 'flex-end', minWidth: 90 },
+  payoutLabel:     { fontFamily: F.grotesk, fontSize: 9, color: C.dim, textTransform: 'uppercase', letterSpacing: 0.8 },
+  payoutAmt:       { fontFamily: F.monoBd, fontSize: 16, color: C.muted, marginTop: 1 },
+  insufficientTxt: { fontFamily: F.mono, fontSize: 10, color: C.red, marginTop: 6 },
+  placeBtn:        { borderRadius: 12, overflow: 'hidden', marginTop: 12 },
   placeBtnInner:   { paddingVertical: 14, alignItems: 'center' },
   placeBtnTxt:     { fontFamily: F.raj, fontSize: 16, letterSpacing: 1, color: 'white' },
 });

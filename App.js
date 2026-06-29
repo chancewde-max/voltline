@@ -88,6 +88,11 @@ export default function App() {
     });
   };
 
+  const placeBet = (amount) => {
+    setPromoCash(p => Math.max(0, p - amount));
+    setBetSlip([]);
+  };
+
   const handleAddFriend = (raw) => {
     const name     = raw.charAt(0).toUpperCase() + raw.slice(1);
     const initials = name.slice(0, 2).toUpperCase();
@@ -111,6 +116,7 @@ export default function App() {
             navigate={navigate}
             betSlip={betSlip}
             onAddBet={addBet}
+            onPlaceBet={placeBet}
           />
         </Animated.View>
 
