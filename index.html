@@ -322,7 +322,7 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
         <span class="nav-label">Live</span>
       </div>
-      <div class="nav-item" onclick="navigate('home')">
+      <div class="nav-item" onclick="navigate('casino')">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
         <span class="nav-label">Casino</span>
       </div>
@@ -374,7 +374,7 @@
         <span class="live-title" id="live-sport-label">Live NBA</span>
         <span class="live-count" id="live-count"></span>
       </div>
-      <span class="see-all">See all →</span>
+      <span class="see-all" id="see-all-btn" onclick="toggleSeeAll()" style="display:none">See all →</span>
     </div>
     <div class="games-area">
       <div id="games-container"></div>
@@ -408,7 +408,7 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#00f0f5" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#00f0f5"/></svg>
         <span class="nav-label active">Live</span>
       </div>
-      <div class="nav-item" onclick="navigate('home')">
+      <div class="nav-item" onclick="navigate('casino')">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
         <span class="nav-label">Casino</span>
       </div>
@@ -423,6 +423,53 @@
     </div>
 
   </div><!-- /screen-live -->
+
+  <!-- CASINO SCREEN -->
+  <div class="screen hidden-right" id="screen-casino">
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div class="status-icons">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
+        <span class="status-5g">5G</span>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
+      </div>
+    </div>
+    <div class="bets-header">
+      <span class="brand">VOLT<span>LINE</span></span>
+      <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#4a5a7a;letter-spacing:1px">CASINO</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px">
+      <div style="display:flex;gap:12px;margin-bottom:24px;font-size:36px">🚧 🚧 🚧</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;letter-spacing:3px;color:#eef2ff;margin-bottom:14px;text-align:center">UNDER CONSTRUCTION</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:#4a5a7a;text-align:center;line-height:1.6;margin-bottom:24px">Casino games are coming soon.<br>Check back for slots, blackjack, and more.</div>
+      <div style="background:rgba(255,176,46,0.1);border:1px solid rgba(255,176,46,0.3);border-radius:8px;padding:6px 16px">
+        <span style="font-family:'Space Mono',monospace;font-size:12px;color:#ffb02e;letter-spacing:1.5px;font-weight:700">COMING SOON</span>
+      </div>
+    </div>
+    <div class="ticker-bar"><div class="ticker-track" id="ticker-casino"></div></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item" onclick="navigate('live')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
+        <span class="nav-label">Live</span>
+      </div>
+      <div class="nav-item active" onclick="navigate('casino')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#00f0f5" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#00f0f5"/><circle cx="13" cy="7" r="1.3" fill="#00f0f5"/><circle cx="10" cy="10" r="1.3" fill="#00f0f5"/><circle cx="7" cy="13" r="1.3" fill="#00f0f5"/><circle cx="13" cy="13" r="1.3" fill="#00f0f5"/></svg>
+        <span class="nav-label active">Casino</span>
+      </div>
+      <div class="nav-item" onclick="navigate('bets')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="4" width="13" height="12" rx="2" stroke="#3d4e6e" stroke-width="1.5"/><path d="M7 8.5h6M7 12h4" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="nav-label">Bets</span>
+      </div>
+      <div class="nav-item" onclick="navigate('account')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7.5" r="3" stroke="#3d4e6e" stroke-width="1.5"/><path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="nav-label">Account</span>
+      </div>
+    </div>
+  </div><!-- /screen-casino -->
 
   <!-- BETS SCREEN -->
   <div class="screen hidden-right" id="screen-bets">
@@ -464,7 +511,7 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
         <span class="nav-label">Live</span>
       </div>
-      <div class="nav-item" onclick="navigate('home')">
+      <div class="nav-item" onclick="navigate('casino')">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
         <span class="nav-label">Casino</span>
       </div>
@@ -561,7 +608,7 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
         <span class="nav-label">Live</span>
       </div>
-      <div class="nav-item" onclick="navigate('home')">
+      <div class="nav-item" onclick="navigate('casino')">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
         <span class="nav-label">Casino</span>
       </div>
@@ -622,7 +669,7 @@
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
-  screen: 'home', activeSport: 'NBA',
+  screen: 'home', activeSport: 'NBA', showAll: false, allGames: [],
   wins: 142, losses: 89, promoCash: 3240.50, gems: 1250,
   selectedPack: 'p2',
   betSlip: [],
@@ -723,7 +770,7 @@ function parseESPN(data, sport) {
     const aNum = parseInt(awayScore) || 0;
     const hNum = parseInt(homeScore) || 0;
     return {
-      id: ev.id, sport, period: periodStr, isLive, isFinal,
+      id: ev.id, sport, period: periodStr, date: ev.date, isLive, isFinal,
       teams: [
         { abbr: awayAbbr, score: awayScore, lead: aNum > hNum },
         { abbr: homeAbbr, score: homeScore, lead: hNum > aNum }
@@ -735,7 +782,7 @@ function parseESPN(data, sport) {
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-const SCREEN_ORDER = ['home', 'live', 'bets', 'account'];
+const SCREEN_ORDER = ['home', 'live', 'casino', 'bets', 'account'];
 function navigate(screen) {
   const from = document.getElementById('screen-' + state.screen);
   const to   = document.getElementById('screen-' + screen);
@@ -750,6 +797,7 @@ function navigate(screen) {
   if (screen === 'home')    renderForYou();
   if (screen === 'account') renderAccount();
   if (screen === 'bets')    renderBets();
+  if (screen === 'live')    { state.showAll = false; updateSeeAll(); }
   updateSlipBar();
 }
 
@@ -861,68 +909,122 @@ function switchSport(el, sport) {
   document.querySelectorAll('.sport-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   state.activeSport = sport;
+  state.showAll = false;
   document.getElementById('live-sport-label').textContent = 'Live ' + sport;
   fetchGames(sport);
+}
+
+function updateSeeAll() {
+  const btn = document.getElementById('see-all-btn');
+  if (!btn) return;
+  const total = (state.allGames || []).length;
+  if (total <= 8) { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  btn.textContent = state.showAll ? '← Less' : `See all ${total} →`;
+}
+
+function toggleSeeAll() {
+  state.showAll = !state.showAll;
+  updateSeeAll();
+  document.getElementById('live-sport-label').textContent =
+    (state.showAll ? 'All ' : 'Live ') + state.activeSport;
+  renderGames(state.allGames, state.activeSport);
 }
 
 async function fetchGames(sport) {
   const container = document.getElementById('games-container');
   container.innerHTML = '<div class="games-loading"><div class="spinner"></div> Loading...</div>';
-  const liveCountEl = document.getElementById('live-count');
-  liveCountEl.textContent = '';
+  document.getElementById('live-count').textContent = '';
 
   const url = ESPN_URLS[sport];
-  if (!url) {
-    renderGames(FALLBACK_GAMES[sport] || [], sport);
-    return;
-  }
+  let games = [];
   try {
-    const res  = await fetch(url);
-    const data = await res.json();
-    const games = parseESPN(data, sport);
-    renderGames(games.length > 0 ? games : (FALLBACK_GAMES[sport] || []), sport);
+    if (url) {
+      const data = await fetch(url).then(r => r.json());
+      games = parseESPN(data, sport);
+    }
+    if (games.length === 0) games = FALLBACK_GAMES[sport] || [];
   } catch {
-    renderGames(FALLBACK_GAMES[sport] || [], sport);
+    games = FALLBACK_GAMES[sport] || [];
   }
+  state.allGames = games;
+  updateSeeAll();
+  renderGames(games, sport);
+}
+
+function gameCardHTML(game, sport, featured) {
+  const inSlip = state.betSlip.some(b => b.gameId === game.id);
+  const locked = game.isFinal;
+  return `
+    <div class="game-card${featured ? ' featured' : ''}${inSlip ? ' in-slip' : ''}${locked ? ' card-locked' : ''}" id="card-${game.id}">
+      <div class="game-card-header">
+        <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
+        <span class="game-sport">${game.sport}${locked ? ' <span class="locked-badge">LOCKED</span>' : ''}</span>
+      </div>
+      ${game.teams.map((t, i) => {
+        const odds = i === 0 ? game.awayOdds : game.homeOdds;
+        const sel  = state.betSlip.some(b => b.id === game.id+'-'+t.abbr);
+        const leadClass = t.lead ? (featured && i === 1 ? ' feat' : ' leading') : '';
+        return `
+          <div class="game-team-row${locked ? ' locked-row' : ''}" ${locked ? '' : `onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${sport}')"`}>
+            <span class="team-abbr${leadClass}${locked ? ' dim' : ''}">${t.abbr}</span>
+            <div class="team-right">
+              <span class="team-score${leadClass}${locked ? ' dim' : ''}">${t.score}</span>
+              <span class="odds-btn${sel ? ' sel' : ''}${locked ? ' locked' : ''}" id="odds-${game.id}-${t.abbr}">${locked ? '—' : odds}</span>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
 }
 
 function renderGames(games, sport) {
   const container = document.getElementById('games-container');
   const liveCountEl = document.getElementById('live-count');
   if (games.length === 0) {
-    container.innerHTML = '<div class="games-empty">No live events right now</div>';
+    container.innerHTML = '<div class="games-empty">No events right now</div>';
     liveCountEl.textContent = '';
     return;
   }
   const liveCount = games.filter(g => g.isLive).length;
   liveCountEl.textContent = liveCount > 0 ? liveCount : '';
 
-  container.innerHTML = '<div class="game-grid">' + games.map((game, idx) => {
-    const featured = idx === 0;
-    const inSlip   = state.betSlip.some(b => b.gameId === game.id);
-    const locked   = game.isFinal;
-    const delay    = idx * 0.08;
-    return `
-      <div class="game-card${featured ? ' featured' : ''}${inSlip ? ' in-slip' : ''}${locked ? ' card-locked' : ''}" id="card-${game.id}" style="animation-delay:${delay}s">
-        <div class="game-card-header">
-          <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
-          <span class="game-sport">${game.sport}${locked ? ' <span class="locked-badge">LOCKED</span>' : ''}</span>
+  if (state.showAll) {
+    // Group by date
+    const map = {};
+    const today = new Date(); today.setHours(0,0,0,0);
+    for (const g of games) {
+      let key;
+      if (g.isLive) key = '● LIVE NOW';
+      else if (g.isFinal) key = 'FINAL';
+      else {
+        const d = new Date(g.date || Date.now());
+        const diff = Math.round((d - today) / 86400000);
+        key = diff === 0 ? 'TODAY' : diff === 1 ? 'TOMORROW' : diff === -1 ? 'YESTERDAY'
+          : d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }).toUpperCase();
+      }
+      if (!map[key]) map[key] = [];
+      map[key].push(g);
+    }
+    const ORDER = ['● LIVE NOW','TODAY','TOMORROW'];
+    const entries = Object.entries(map).sort(([a],[b]) => {
+      const ai = ORDER.indexOf(a), bi = ORDER.indexOf(b);
+      if (ai >= 0 && bi >= 0) return ai - bi;
+      if (ai >= 0) return -1; if (bi >= 0) return 1;
+      if (a === 'FINAL') return 1; if (b === 'FINAL') return -1;
+      return a.localeCompare(b);
+    });
+    container.innerHTML = entries.map(([label, dayGames]) => `
+      <div style="padding:12px 0 4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0 2px 8px">
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:#4a5a7a;letter-spacing:1.2px">${label}</span>
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:#2a3a5a">${dayGames.length} game${dayGames.length !== 1 ? 's' : ''}</span>
         </div>
-        ${game.teams.map((t, i) => {
-          const odds = i === 0 ? game.awayOdds : game.homeOdds;
-          const sel  = state.betSlip.some(b => b.id === game.id+'-'+t.abbr);
-          const leadClass = t.lead ? (featured && i === 1 ? ' feat' : ' leading') : '';
-          return `
-            <div class="game-team-row${locked ? ' locked-row' : ''}" ${locked ? '' : `onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${sport}')"`}>
-              <span class="team-abbr${leadClass}${locked ? ' dim' : ''}">${t.abbr}</span>
-              <div class="team-right">
-                <span class="team-score${leadClass}${locked ? ' dim' : ''}">${t.score}</span>
-                <span class="odds-btn${sel ? ' sel' : ''}${locked ? ' locked' : ''}" id="odds-${game.id}-${t.abbr}">${locked ? '—' : odds}</span>
-              </div>
-            </div>`;
-        }).join('')}
-      </div>`;
-  }).join('') + '</div>';
+        <div class="game-grid">${dayGames.map(g => gameCardHTML(g, sport, false)).join('')}</div>
+      </div>`).join('');
+  } else {
+    const visible = games.slice(0, 8);
+    container.innerHTML = '<div class="game-grid">' + visible.map((game, idx) => gameCardHTML(game, sport, idx === 0)).join('') + '</div>';
+  }
 }
 
 // ─── Bet Slip ─────────────────────────────────────────────────────────────────
