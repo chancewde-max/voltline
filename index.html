@@ -266,7 +266,10 @@
         <div class="slip-badge" id="slip-badge">0</div>
         <span class="slip-bar-label" id="slip-bar-label">BET SLIP</span>
       </div>
-      <span class="slip-bar-cta">VIEW SLIP ↑</span>
+      <div style="text-align:right">
+        <div id="slip-bar-odds" style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#00f0f5"></div>
+        <span class="slip-bar-cta">VIEW SLIP ↑</span>
+      </div>
     </div>
 
     <!-- Ticker -->
@@ -655,6 +658,8 @@ function updateSlipBar() {
   badge.className   = 'slip-badge' + (isParlay ? ' parlay' : '');
   label.textContent = isParlay ? 'PARLAY' : 'STRAIGHT BET';
   if (isParlay) bar.classList.add('parlay'); else bar.classList.remove('parlay');
+  const oddsBarEl = document.getElementById('slip-bar-odds');
+  if (oddsBarEl) { oddsBarEl.textContent = calcCombinedOdds(state.betSlip); oddsBarEl.style.color = isParlay ? '#a78bff' : '#00f0f5'; }
 }
 
 function openSlip() {

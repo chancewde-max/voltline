@@ -233,7 +233,10 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
             </View>
             <Text style={s.slipLabel}>{isParlay ? 'PARLAY' : 'STRAIGHT BET'}</Text>
           </View>
-          <Text style={s.slipCta}>VIEW SLIP ↑</Text>
+          <View style={s.slipRight}>
+            <Text style={[s.slipOdds, isParlay && s.slipOddsParlay]}>{combinedOdds}</Text>
+            <Text style={s.slipCta}>VIEW SLIP ↑</Text>
+          </View>
         </TouchableOpacity>
       )}
 
@@ -440,6 +443,9 @@ const s = StyleSheet.create({
   slipBadgeParlay: { backgroundColor: '#7b5cff' },
   slipCount:       { fontFamily: F.monoBd, fontSize: 11, color: '#030310' },
   slipLabel:       { fontFamily: F.raj, fontSize: 14, letterSpacing: 1, color: C.white },
+  slipRight:       { alignItems: 'flex-end', gap: 2 },
+  slipOdds:        { fontFamily: F.monoBd, fontSize: 14, color: C.cyan },
+  slipOddsParlay:  { color: '#a78bff' },
   slipCta:         { fontFamily: F.mono, fontSize: 10, color: C.cyan },
 
   overlay:         { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.65)' },
