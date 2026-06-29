@@ -12,21 +12,14 @@ import {
 } from '@expo-google-fonts/space-grotesk';
 import { SpaceMono_400Regular, SpaceMono_700Bold } from '@expo-google-fonts/space-mono';
 
-import HomeScreen from './src/screens/HomeScreen';
+import ForYouScreen from './src/screens/ForYouScreen';
+import LiveScreen from './src/screens/LiveScreen';
 import AccountScreen from './src/screens/AccountScreen';
 import BetsScreen from './src/screens/BetsScreen';
 import { pad2 } from './src/constants';
+import { ESPN_URLS, resolveBetStatus } from './src/bets';
 
 const W = Dimensions.get('window').width;
-
-const SPORT_ESPN_URLS = {
-  NBA:         'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-  NFL:         'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
-  Soccer:      'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
-  NHL:         'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-  UFC:         'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
-  'World Cup': 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
-};
 
 const INITIAL_FRIENDS = [
   { id: 'f1', name: 'Marcus Tan',  initials: 'MT', status: 'online',  wr: '68%' },
@@ -71,7 +64,6 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
   const gameTime = `Q4 ${min}:${pad2(sec)}`;
-  const bosOdds  = '+125';
 
   // ── Outcome resolution ──
   useEffect(() => {
@@ -82,7 +74,7 @@ export default function App() {
       const sportsNeeded = [...new Set(pending.flatMap(b => b.legs.map(l => l.sport)))];
       const sportEvents = {};
       await Promise.all(sportsNeeded.map(async sport => {
-        const url = SPORT_ESPN_URLS[sport];
+        const url = ESPN_URLS[sport];
         if (!url) return;
         try {
           const data = await fetch(url).then(r => r.json());
@@ -92,22 +84,8 @@ export default function App() {
 
       setPlacedBets(prev => prev.map(bet => {
         if (bet.status !== 'pending') return bet;
-
-        const legResults = bet.legs.map(leg => {
-          const events = sportEvents[leg.sport] || [];
-          const ev = events.find(e => e.id === leg.gameId);
-          if (!ev) return null;
-          if (ev.status?.type?.description !== 'Final') return null;
-
-          const comps = ev.competitions?.[0]?.competitors || [];
-          const sorted = [...comps].sort((a, b) => parseInt(b.score || 0) - parseInt(a.score || 0));
-          const wonAbbr = sorted[0]?.team?.abbreviation;
-          return wonAbbr === leg.teamAbbr ? 'won' : 'lost';
-        });
-
-        if (legResults.some(r => r === null)) return bet;
-        const anyLost = legResults.some(r => r === 'lost');
-        return { ...bet, status: anyLost ? 'lost' : 'won' };
+        const status = resolveBetStatus(bet, sportEvents);
+        return status === 'pending' ? bet : { ...bet, status };
       }));
     };
 
@@ -117,24 +95,23 @@ export default function App() {
   }, []);
 
   // ── Navigation ──
-  const homeX    = useRef(new Animated.Value(0)).current;
-  const betsX    = useRef(new Animated.Value(W)).current;
-  const accountX = useRef(new Animated.Value(W)).current;
+  // Screens are horizontal layers; navigating slides everything left of the
+  // destination off-screen (-W), the destination to 0, and the rest to +W.
+  const ORDER = ['home', 'live', 'bets', 'account'];
+  const layers = useRef(
+    ORDER.reduce((acc, key, i) => { acc[key] = new Animated.Value(i === 0 ? 0 : W); return acc; }, {})
+  ).current;
   const [screen, setScreen] = useState('home');
 
   const navigate = (dest) => {
-    if (dest === screen) return;
-    const positions = {
-      home:    { home: 0,    bets: W,    account: W  },
-      bets:    { home: -W,   bets: 0,    account: W  },
-      account: { home: -W,   bets: -W,   account: 0  },
-    };
-    const pos = positions[dest] || positions.home;
-    Animated.parallel([
-      Animated.spring(homeX,    { toValue: pos.home,    useNativeDriver: true, tension: 120, friction: 20 }),
-      Animated.spring(betsX,    { toValue: pos.bets,    useNativeDriver: true, tension: 120, friction: 20 }),
-      Animated.spring(accountX, { toValue: pos.account, useNativeDriver: true, tension: 120, friction: 20 }),
-    ]).start();
+    if (dest === screen || !layers[dest]) return;
+    const destIdx = ORDER.indexOf(dest);
+    Animated.parallel(ORDER.map((key, i) =>
+      Animated.spring(layers[key], {
+        toValue: i < destIdx ? -W : i > destIdx ? W : 0,
+        useNativeDriver: true, tension: 120, friction: 20,
+      })
+    )).start();
     setScreen(dest);
   };
 
@@ -180,10 +157,21 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="light" />
       <View style={styles.root}>
-        <Animated.View style={[styles.layer, { transform: [{ translateX: homeX }] }]}>
-          <HomeScreen
+        <Animated.View style={[styles.layer, { transform: [{ translateX: layers.home }] }]}>
+          <ForYouScreen
             promoCash={promoCash}
-            bosOdds={bosOdds}
+            gameTime={gameTime}
+            navigate={navigate}
+            betSlip={betSlip}
+            onAddBet={addBet}
+            onPlaceBet={placeBet}
+            placedBets={placedBets}
+          />
+        </Animated.View>
+
+        <Animated.View style={[styles.layer, styles.overlay, { transform: [{ translateX: layers.live }] }]}>
+          <LiveScreen
+            promoCash={promoCash}
             gameTime={gameTime}
             navigate={navigate}
             betSlip={betSlip}
@@ -192,7 +180,7 @@ export default function App() {
           />
         </Animated.View>
 
-        <Animated.View style={[styles.layer, styles.overlay, { transform: [{ translateX: betsX }] }]}>
+        <Animated.View style={[styles.layer, styles.overlay, { transform: [{ translateX: layers.bets }] }]}>
           <BetsScreen
             placedBets={placedBets}
             navigate={navigate}
@@ -200,7 +188,7 @@ export default function App() {
           />
         </Animated.View>
 
-        <Animated.View style={[styles.layer, styles.overlay, { transform: [{ translateX: accountX }] }]}>
+        <Animated.View style={[styles.layer, styles.overlay, { transform: [{ translateX: layers.account }] }]}>
           <AccountScreen
             wins={wins}
             losses={losses}
