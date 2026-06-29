@@ -99,7 +99,7 @@
 
   /* ticker — always at bottom: 74px (above nav), never moves */
   .ticker-bar { position: absolute; left: 0; right: 0; bottom: 74px; height: 27px; background: rgba(0,0,8,.97); border-top: 1px solid rgba(0,240,245,.2); overflow: hidden; display: flex; align-items: center; z-index: 4; }
-  .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 22s linear infinite; }
+  .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 14s linear infinite; }
   .ticker-item { font-family: 'Space Mono', monospace; font-size: 9px; padding: 0 16px; }
   .ticker-item.hot { color: #00f0f5; }
   .ticker-item.dim { color: #4a5a7a; }
@@ -236,6 +236,42 @@
   .foryou-feed { flex: 1; overflow-y: auto; padding: 0 18px 116px; display: flex; flex-direction: column; gap: 10px; }
   .foryou-card { animation: slide-in .4s ease-out both; }
   .foryou-card .reason { font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #00f0f5; margin-bottom: 8px; }
+  /* Game detail modal */
+  .game-detail-modal { position: fixed; inset: 0; z-index: 200; background: #030310; display: flex; flex-direction: column; transform: translateY(100%); transition: transform .3s cubic-bezier(.32,1,.6,1); }
+  .game-detail-modal.open { transform: translateY(0); }
+  .gd-close { position: absolute; top: 14px; right: 18px; background: none; border: none; color: #4a5a7a; font-size: 18px; cursor: pointer; z-index: 10; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+  .gd-header { display: flex; flex-direction: column; align-items: center; padding: 44px 18px 22px; border-bottom: 1px solid #0d1a2e; flex-shrink: 0; }
+  .gd-period { font-family: 'Space Mono', monospace; font-size: 10px; color: #4a5a7a; letter-spacing: 1px; margin-bottom: 4px; }
+  .gd-sport-label { font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; color: #2a3a5a; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 18px; }
+  .gd-teams { display: flex; align-items: center; gap: 24px; }
+  .gd-team { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .gd-abbr { font-family: 'Rajdhani', sans-serif; font-size: 30px; color: #3d4e6e; letter-spacing: 1px; }
+  .gd-abbr.lead { color: #eef2ff; }
+  .gd-score { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 38px; color: #3d4e6e; }
+  .gd-score.lead { color: #00f0f5; text-shadow: 0 0 16px rgba(0,240,245,.4); }
+  .gd-vs { font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: #2a3a5a; }
+  .gd-tabs { display: flex; border-bottom: 1px solid #0d1a2e; flex-shrink: 0; }
+  .gd-tab { flex: 1; padding: 11px 0; text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: #3d4e6e; letter-spacing: .5px; cursor: pointer; border-bottom: 2px solid transparent; }
+  .gd-tab.active { color: #00f0f5; border-bottom-color: #00f0f5; }
+  .gd-body { flex: 1; overflow-y: auto; padding: 18px; padding-bottom: 40px; }
+  .gd-section-title { font-family: 'Rajdhani', sans-serif; font-size: 13px; letter-spacing: 1.5px; color: #4a5a7a; margin-bottom: 14px; text-transform: uppercase; }
+  .gd-prop-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 14px; background: #0a1020; border: 1px solid #0d1a2e; border-radius: 10px; margin-bottom: 8px; cursor: pointer; }
+  .gd-prop-row.sel { border-color: #00f0f5; background: rgba(0,240,245,.06); }
+  .gd-prop-row:hover { border-color: rgba(0,240,245,.3); }
+  .gd-prop-label { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500; color: #eef2ff; }
+  .gd-prop-odds { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: #eef2ff; }
+  .gd-prop-row.sel .gd-prop-odds { color: #00f0f5; }
+  .gd-prop-group { margin-bottom: 12px; }
+  .gd-prop-group-label { font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600; color: #4a5a7a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .gd-prop-btns { display: flex; gap: 8px; }
+  .gd-prop-btn { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 11px 12px; background: #0a1020; border: 1px solid #0d1a2e; border-radius: 10px; cursor: pointer; }
+  .gd-prop-btn.sel { border-color: #00f0f5; background: rgba(0,240,245,.06); }
+  .gd-prop-btn:hover { border-color: rgba(0,240,245,.3); }
+  .gd-prop-btn-label { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; color: #3d4e6e; }
+  .gd-prop-btn-odds { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: #eef2ff; }
+  .gd-prop-btn.sel .gd-prop-btn-odds { color: #00f0f5; }
+  .card-clickable-header { cursor: pointer; }
+  .card-clickable-header:hover .game-sport { color: #00c0c8; }
 </style>
 </head>
 <body>
@@ -243,14 +279,6 @@
 
   <!-- FOR YOU (HOME) SCREEN -->
   <div class="screen" id="screen-home">
-    <div class="status-bar">
-      <span class="status-time">9:41</span>
-      <div class="status-icons">
-        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
-        <span class="status-5g">5G</span>
-        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
-      </div>
-    </div>
     <div class="home-header">
       <span class="brand">VOLT<span>LINE</span></span>
       <div class="header-right">
@@ -339,14 +367,6 @@
 
   <!-- LIVE SCREEN (sports browser) -->
   <div class="screen hidden-right" id="screen-live">
-    <div class="status-bar">
-      <span class="status-time">9:41</span>
-      <div class="status-icons">
-        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
-        <span class="status-5g">5G</span>
-        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
-      </div>
-    </div>
     <div class="home-header">
       <span class="brand">VOLT<span>LINE</span></span>
       <div class="header-right">
@@ -426,14 +446,6 @@
 
   <!-- CASINO SCREEN -->
   <div class="screen hidden-right" id="screen-casino">
-    <div class="status-bar">
-      <span class="status-time">9:41</span>
-      <div class="status-icons">
-        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
-        <span class="status-5g">5G</span>
-        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
-      </div>
-    </div>
     <div class="bets-header">
       <span class="brand">VOLT<span>LINE</span></span>
       <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#4a5a7a;letter-spacing:1px">CASINO</span>
@@ -473,14 +485,6 @@
 
   <!-- BETS SCREEN -->
   <div class="screen hidden-right" id="screen-bets">
-    <div class="status-bar">
-      <span class="status-time">9:41</span>
-      <div class="status-icons">
-        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
-        <span class="status-5g">5G</span>
-        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
-      </div>
-    </div>
     <div class="home-header">
       <span class="brand">VOLT<span>LINE</span></span>
       <span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:600;color:#4a5a7a;letter-spacing:.08em">MY BETS</span>
@@ -528,14 +532,6 @@
 
   <!-- ACCOUNT SCREEN -->
   <div class="screen hidden-right" id="screen-account">
-    <div class="status-bar">
-      <span class="status-time">9:41</span>
-      <div class="status-icons">
-        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
-        <span class="status-5g">5G</span>
-        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
-      </div>
-    </div>
     <div class="account-header">
       <span class="account-title">Account</span>
       <div class="settings-btn">
@@ -622,6 +618,32 @@
       </div>
     </div>
   </div><!-- /screen-account -->
+
+  <!-- Game detail modal -->
+  <div class="game-detail-modal" id="game-detail-modal">
+    <button class="gd-close" onclick="closeGame()">✕</button>
+    <div class="gd-header" id="gd-header">
+      <div class="gd-period" id="gd-period"></div>
+      <div class="gd-sport-label" id="gd-sport-label"></div>
+      <div class="gd-teams">
+        <div class="gd-team">
+          <div class="gd-abbr" id="gd-away-abbr"></div>
+          <div class="gd-score" id="gd-away-score"></div>
+        </div>
+        <div class="gd-vs">vs</div>
+        <div class="gd-team">
+          <div class="gd-abbr" id="gd-home-abbr"></div>
+          <div class="gd-score" id="gd-home-score"></div>
+        </div>
+      </div>
+    </div>
+    <div class="gd-tabs">
+      <div class="gd-tab active" id="gd-tab-MONEYLINE" onclick="setGdTab('MONEYLINE')">MONEYLINE</div>
+      <div class="gd-tab" id="gd-tab-PROPS" onclick="setGdTab('PROPS')">PROPS</div>
+      <div class="gd-tab" id="gd-tab-SPREADS" onclick="setGdTab('SPREADS')">SPREADS</div>
+    </div>
+    <div class="gd-body" id="gd-body"></div>
+  </div>
 
   <!-- Shared bet slip bar (above ticker; shows on Home/Live) -->
   <div class="bet-slip-bar" id="slip-bar" onclick="openSlip()">
@@ -918,7 +940,7 @@ function updateSeeAll() {
   const btn = document.getElementById('see-all-btn');
   if (!btn) return;
   const total = (state.allGames || []).length;
-  if (total <= 8) { btn.style.display = 'none'; return; }
+  if (total === 0) { btn.style.display = 'none'; return; }
   btn.style.display = '';
   btn.textContent = state.showAll ? '← Less' : `See all ${total} →`;
 }
@@ -957,9 +979,9 @@ function gameCardHTML(game, sport, featured) {
   const locked = game.isFinal;
   return `
     <div class="game-card${featured ? ' featured' : ''}${inSlip ? ' in-slip' : ''}${locked ? ' card-locked' : ''}" id="card-${game.id}">
-      <div class="game-card-header">
+      <div class="game-card-header card-clickable-header" onclick="openGame('${game.id}')">
         <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
-        <span class="game-sport">${game.sport}${locked ? ' <span class="locked-badge">LOCKED</span>' : ''}</span>
+        <span class="game-sport">${game.sport}${locked ? ' <span class="locked-badge">LOCKED</span>' : ''} <span style="color:#2a3a5a;font-size:11px">›</span></span>
       </div>
       ${game.teams.map((t, i) => {
         const odds = i === 0 ? game.awayOdds : game.homeOdds;
@@ -1028,6 +1050,132 @@ function renderGames(games, sport) {
 }
 
 // ─── Bet Slip ─────────────────────────────────────────────────────────────────
+// ── Game detail modal ──────────────────────────────────────────────────────
+const GD_PROPS = {
+  NBA:      ['Game Total','Points O/U','Rebounds O/U','Assists O/U','3-Pointers','1H Total'],
+  NFL:      ['Game Total','Passing Yds','Rushing Yds','Receiving Yds','1H Total','Alt Spread'],
+  MLB:      ['Game Total','Strikeouts','Hits','1st 5 Inn.','Total Bases','Run Line'],
+  NHL:      ['Game Total','Shots O/U','Power Plays','1P Total','Alt Line'],
+  Soccer:   ['Match Total','1H Total','Both Score','Corners O/U','Cards O/U'],
+  Tennis:   ['Set Total','Games O/U','1st Set','Break Sets','Ace O/U'],
+  Boxing:   ['Round O/U','Method','Distance Prop','KO Prop','Decision'],
+  UFC:      ['Method','Round O/U','Distance Prop','Sub Prop','KO Prop'],
+  'World Cup':['Match Total','1H Total','Both Score','Corners O/U','Cards O/U'],
+};
+const GD_LINES = {
+  NBA:[215.5,22.5,8.5,6.5,10.5,108.5], NFL:[45.5,245.5,85.5,65.5,23.5,3.5],
+  MLB:[8.5,6.5,7.5,4.5,9.5,-1.5],      NHL:[5.5,58.5,3.5,1.5,2.5],
+  Soccer:[2.5,1.5,0,9.5,3.5],          Tennis:[2.5,22.5,0,1.5,8.5],
+};
+function gdLine(seed, sport, idx) {
+  const base = (GD_LINES[sport] || [2.5])[idx] ?? 2.5;
+  if (base <= 0) return null;
+  return +(base + ((seed % 10) - 5) * 0.5).toFixed(1);
+}
+let gdState = { game: null, tab: 'MONEYLINE' };
+
+function openGame(gameId) {
+  const game = (state.allGames || []).find(g => g.id === gameId);
+  if (!game) return;
+  gdState.game = game;
+  gdState.tab = 'PROPS';
+  const modal = document.getElementById('game-detail-modal');
+  document.getElementById('gd-period').textContent = game.period;
+  document.getElementById('gd-period').style.color = game.isLive ? '#ff4466' : '#4a5a7a';
+  document.getElementById('gd-sport-label').textContent = game.sport;
+  const [away, home] = game.teams;
+  const awayAbbrEl = document.getElementById('gd-away-abbr');
+  const homeAbbrEl = document.getElementById('gd-home-abbr');
+  awayAbbrEl.textContent = away.abbr; awayAbbrEl.className = 'gd-abbr' + (away.leading ? ' lead' : '');
+  homeAbbrEl.textContent = home.abbr; homeAbbrEl.className = 'gd-abbr' + (home.leading ? ' lead' : '');
+  const awayScoreEl = document.getElementById('gd-away-score');
+  const homeScoreEl = document.getElementById('gd-home-score');
+  awayScoreEl.textContent = away.score; awayScoreEl.className = 'gd-score' + (away.leading ? ' lead' : '');
+  homeScoreEl.textContent = home.score; homeScoreEl.className = 'gd-score' + (home.leading ? ' lead' : '');
+  setGdTab('PROPS');
+  modal.classList.add('open');
+}
+
+function closeGame() {
+  document.getElementById('game-detail-modal').classList.remove('open');
+  gdState.game = null;
+}
+
+function setGdTab(tab) {
+  gdState.tab = tab;
+  ['MONEYLINE','PROPS','SPREADS'].forEach(t => {
+    document.getElementById('gd-tab-'+t).className = 'gd-tab' + (t === tab ? ' active' : '');
+  });
+  renderGdBody();
+}
+
+function gdToggleBet(id, gameId, teamAbbr, opponent, odds, sport) {
+  const exists = state.betSlip.findIndex(b => b.id === id);
+  if (exists >= 0) { state.betSlip.splice(exists, 1); }
+  else { state.betSlip.push({ id, gameId, teamAbbr, opponent, odds, sport }); }
+  updateSlipBar();
+  refreshActiveBoard();
+  renderGdBody();
+}
+
+function renderGdBody() {
+  const { game, tab } = gdState;
+  if (!game) return;
+  const body = document.getElementById('gd-body');
+  const locked = game.isFinal;
+
+  if (tab === 'MONEYLINE') {
+    body.innerHTML = `<div class="gd-section-title">Moneyline</div>` +
+      game.teams.map((t, i) => {
+        const odds = i === 0 ? game.awayOdds : game.homeOdds;
+        const id = game.id + '-' + t.abbr;
+        const sel = state.betSlip.some(b => b.id === id);
+        return `<div class="gd-prop-row${sel?' sel':''}" onclick="gdToggleBet('${id}','${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${game.sport}')">
+          <span class="gd-prop-label">${t.abbr} to Win</span>
+          <span class="gd-prop-odds">${locked ? '—' : odds}</span>
+        </div>`;
+      }).join('');
+  } else if (tab === 'PROPS') {
+    const props = GD_PROPS[game.sport] || ['Match Total','Alt Spread','1H Total'];
+    body.innerHTML = `<div class="gd-section-title">Props</div>` +
+      props.map((prop, idx) => {
+        const seed = strHash(game.id + prop);
+        const line = gdLine(seed, game.sport, idx);
+        const overOdds = deterministicOdds(seed);
+        const underOdds = deterministicOdds(strHash(game.id + prop + 'u'));
+        const overId = game.id+'-'+prop+'-o', underId = game.id+'-'+prop+'-u';
+        const overSel = state.betSlip.some(b => b.id === overId);
+        const underSel = state.betSlip.some(b => b.id === underId);
+        return `<div class="gd-prop-group">
+          <div class="gd-prop-group-label">${prop}${line !== null ? ' '+line : ''}</div>
+          <div class="gd-prop-btns">
+            <div class="gd-prop-btn${overSel?' sel':''}" onclick="gdToggleBet('${overId}','${game.id}','${prop} Over','','${overOdds}','${game.sport}')">
+              <span class="gd-prop-btn-label">Over</span><span class="gd-prop-btn-odds">${locked ? '—' : overOdds}</span>
+            </div>
+            <div class="gd-prop-btn${underSel?' sel':''}" onclick="gdToggleBet('${underId}','${game.id}','${prop} Under','','${underOdds}','${game.sport}')">
+              <span class="gd-prop-btn-label">Under</span><span class="gd-prop-btn-odds">${locked ? '—' : underOdds}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+  } else if (tab === 'SPREADS') {
+    body.innerHTML = `<div class="gd-section-title">Spreads</div>` +
+      game.teams.map((t, i) => {
+        const spreadSeed = strHash(game.id + t.abbr + 'spd');
+        const spreadVal = ((spreadSeed % 14) + 1) + 0.5;
+        const spreadOdds = deterministicOdds(spreadSeed);
+        const id = game.id+'-'+t.abbr+'-spd';
+        const sel = state.betSlip.some(b => b.id === id);
+        const isFav = parseInt(i === 0 ? game.awayOdds : game.homeOdds) < 0;
+        const sign = isFav ? '-' + spreadVal : '+' + spreadVal;
+        return `<div class="gd-prop-row${sel?' sel':''}" onclick="gdToggleBet('${id}','${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spreadOdds}','${game.sport}')">
+          <span class="gd-prop-label">${t.abbr} ${sign}</span>
+          <span class="gd-prop-odds">${locked ? '—' : spreadOdds}</span>
+        </div>`;
+      }).join('');
+  }
+}
+
 function toggleBet(gameId, teamAbbr, opponent, odds, sport) {
   const betId = gameId + '-' + teamAbbr;
   const exists = state.betSlip.findIndex(b => b.id === betId);

@@ -10,6 +10,7 @@ import BottomNav from '../components/BottomNav';
 import Ticker from '../components/Ticker';
 import BetSlip from '../components/BetSlip';
 import GameCard from '../components/GameCard';
+import GameDetailModal from '../components/GameDetailModal';
 
 const SPORTS = ['NBA', 'NFL', 'MLB', 'Soccer', 'NHL', 'Tennis', 'UFC', 'Boxing', 'World Cup'];
 const CARD_W = (SCREEN_W - 36 - 8) / 2;
@@ -20,6 +21,7 @@ export default function LiveScreen({ promoCash, gameTime, navigate, betSlip, onA
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [selectedGame, setSelectedGame] = useState(null);
 
   const dotScale   = useRef(new Animated.Value(1)).current;
   const dotOpacity = useRef(new Animated.Value(1)).current;
@@ -125,7 +127,7 @@ export default function LiveScreen({ promoCash, gameTime, navigate, betSlip, onA
             <Text style={s.liveTitle}>{showAll ? `All ${activeSport}` : `Live ${activeSport}`}</Text>
             {liveCount > 0 && <Text style={s.liveCount}>{liveCount}</Text>}
           </View>
-          {games.length > 8 && (
+          {games.length > 0 && (
             <TouchableOpacity onPress={() => setShowAll(v => !v)} activeOpacity={0.7}>
               <Text style={s.seeAll}>{showAll ? '← Less' : `See all ${games.length} →`}</Text>
             </TouchableOpacity>
@@ -146,7 +148,7 @@ export default function LiveScreen({ promoCash, gameTime, navigate, betSlip, onA
               </View>
               <View style={s.grid}>
                 {dayGames.map((game, idx) => (
-                  <GameCard key={game.id} game={game} featured={false} betSlip={betSlip} onAddBet={onAddBet} style={{ width: CARD_W }} />
+                  <GameCard key={game.id} game={game} featured={false} betSlip={betSlip} onAddBet={onAddBet} onGamePress={setSelectedGame} style={{ width: CARD_W }} />
                 ))}
               </View>
             </View>
@@ -155,7 +157,7 @@ export default function LiveScreen({ promoCash, gameTime, navigate, betSlip, onA
           // Default view: top 8 in a grid
           <View style={s.grid}>
             {visibleGames.map((game, idx) => (
-              <GameCard key={game.id} game={game} featured={idx === 0} betSlip={betSlip} onAddBet={onAddBet} style={{ width: CARD_W }} />
+              <GameCard key={game.id} game={game} featured={idx === 0} betSlip={betSlip} onAddBet={onAddBet} onGamePress={setSelectedGame} style={{ width: CARD_W }} />
             ))}
           </View>
         )}
@@ -166,6 +168,13 @@ export default function LiveScreen({ promoCash, gameTime, navigate, betSlip, onA
       <BetSlip betSlip={betSlip} onAddBet={onAddBet} onPlaceBet={onPlaceBet} promoCash={promoCash} />
       <Ticker bosTime={gameTime} />
       <BottomNav current="live" navigate={navigate} />
+      <GameDetailModal
+        game={selectedGame}
+        visible={!!selectedGame}
+        onClose={() => setSelectedGame(null)}
+        betSlip={betSlip}
+        onAddBet={onAddBet}
+      />
     </View>
   );
 }

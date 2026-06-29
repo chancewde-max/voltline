@@ -4,7 +4,7 @@ import { C, F } from '../constants';
 
 // A single game tile with tappable moneyline odds. Shared by the Live
 // browser (grid) and the For You feed (full-width, with a reason tag).
-export default function GameCard({ game, featured, betSlip, onAddBet, style, reason, onCardPress }) {
+export default function GameCard({ game, featured, betSlip, onAddBet, style, reason, onCardPress, onGamePress }) {
   const locked = game.isFinal;
 
   const handleTeamPress = (teamIdx) => {
@@ -32,13 +32,19 @@ export default function GameCard({ game, featured, betSlip, onAddBet, style, rea
           <Text style={s.reasonTxt}>{reason}</Text>
         </View>
       )}
-      <View style={s.cardHead}>
+      <TouchableOpacity
+        style={s.cardHead}
+        onPress={() => onGamePress && onGamePress(game)}
+        activeOpacity={onGamePress ? 0.7 : 1}
+        disabled={!onGamePress}
+      >
         <Text style={[s.cardPeriod, game.isLive && { color: C.red }]}>{game.period}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={s.cardSport}>{game.sport}</Text>
           {locked && <Text style={s.lockedBadge}>LOCKED</Text>}
+          {onGamePress && !locked && <Text style={s.cardChevron}>›</Text>}
         </View>
-      </View>
+      </TouchableOpacity>
       {game.teams.map((t, i) => {
         const odds = i === 0 ? game.awayOdds : game.homeOdds;
         const sel  = betSlip.some(b => b.id === `${game.id}-${t.abbr}`);
@@ -81,6 +87,7 @@ const s = StyleSheet.create({
   cardHead:        { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   cardPeriod:      { fontFamily: F.mono, fontSize: 8, color: C.dim, letterSpacing: 0.8 },
   cardSport:       { fontFamily: F.mono, fontSize: 8, color: C.dim },
+  cardChevron:     { fontFamily: F.grotesk, fontSize: 11, color: C.dimmer },
   teamRow:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   teamAbbr:        { fontFamily: F.raj, fontSize: 12, color: C.muted },
   teamAbbrLead:    { color: C.white },

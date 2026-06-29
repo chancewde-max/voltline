@@ -48,6 +48,7 @@ const STATIC_FALLBACK = [
   { text: 'GSW 89 – MIL 94 Q3 5:12', color: C.dim },
   { text: "MCI 1 – ARS 2 72'",        color: C.dim },
   { text: 'PHX 98 – DAL 101 Final',   color: C.green },
+  { text: '● NYY 3 – BOS 1 T7',       color: C.cyan },
 ];
 
 export default function Ticker({ bosTime }) {
@@ -88,7 +89,7 @@ export default function Ticker({ bosTime }) {
     animRef.current = Animated.loop(
       Animated.timing(translateX, {
         toValue: -hw,
-        duration: 22000,
+        duration: 14000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
