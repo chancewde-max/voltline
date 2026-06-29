@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    @keyframes live-dot {0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.7);opacity:.4}}
+    @keyframes frame-in {from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slide-a {from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes slide-b {from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes ticker-scroll {from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    @keyframes buy-flash {0%{opacity:0;transform:translateY(6px)}15%{opacity:1;transform:translateY(0)}85%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+    body{background:#020209;margin:0}*{box-sizing:border-box}
+    ::-webkit-scrollbar{width:0;height:0}
+  </style>
+</helmet>
+
+<!-- ═══════════════════════════════ FRAME 1: HOME (ticker) ═══════════════════════════════ -->
+<div style="position:absolute;left:80px;top:48px;width:375px;">
+  <div data-drags-parent="1" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:default;">
+    <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;color:#00f0f5;">01</span>
+    <div style="width:1px;height:9px;background:rgba(0,240,245,.35);flex-shrink:0;"></div>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:rgba(238,242,255,.5);letter-spacing:.1em;text-transform:uppercase;">Home</span>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:rgba(238,242,255,.2);">Live Dashboard</span>
+  </div>
+  <div style="width:375px;height:782px;background:#030310;border-radius:22px;border:1px solid rgba(0,240,245,.12);overflow:hidden;box-shadow:0 0 70px rgba(0,240,245,.06),0 30px 90px rgba(0,0,0,.8);animation:frame-in .6s ease-out both;position:relative;display:flex;flex-direction:column;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 4px;flex-shrink:0;">
+      <span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#eef2ff;">9:41</span>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:#eef2ff;opacity:.8;">5G</span>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 18px 12px;flex-shrink:0;">
+      <span style="font-family:'Rajdhani',sans-serif;font-size:21px;font-weight:700;letter-spacing:.05em;color:#eef2ff;">VOLT<span style="color:#00f0f5;">LINE</span></span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="text-align:right;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;text-transform:uppercase;letter-spacing:.08em;">Balance</div>
+          <div style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:#00f0f5;text-shadow:0 0 16px rgba(0,240,245,.4);">{{ promoCashFmt }}</div>
+        </div>
+        <div style="width:34px;height:34px;background:linear-gradient(135deg,#00c0c8,#0050ff);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;color:white;">JD</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;padding:0 0 0 18px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
+      <div style="padding:9px 14px 9px 0;border-bottom:2px solid #00f0f5;cursor:pointer;flex-shrink:0;margin-right:10px;"><span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;color:#00f0f5;">NBA</span></div>
+      <div style="padding:9px 12px;border-bottom:2px solid transparent;cursor:pointer;flex-shrink:0;"><span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;color:#3d4e6e;">NFL</span></div>
+      <div style="padding:9px 12px;border-bottom:2px solid transparent;cursor:pointer;flex-shrink:0;"><span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;color:#3d4e6e;">Soccer</span></div>
+      <div style="padding:9px 12px;border-bottom:2px solid transparent;cursor:pointer;flex-shrink:0;"><span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;color:#3d4e6e;">NHL</span></div>
+      <div style="padding:9px 12px;border-bottom:2px solid transparent;cursor:pointer;flex-shrink:0;"><span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;color:#3d4e6e;">Tennis</span></div>
+      <div style="padding:9px 12px;border-bottom:2px solid transparent;cursor:pointer;flex-shrink:0;"><span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;color:#3d4e6e;">UFC</span></div>
+      <div style="padding:9px 12px;border-bottom:2px solid transparent;cursor:pointer;flex-shrink:0;"><span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;color:#3d4e6e;">Boxing</span></div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:6px;height:6px;background:#ff2952;border-radius:50%;animation:live-dot 1s ease-in-out infinite;flex-shrink:0;"></div>
+        <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;color:#eef2ff;text-transform:uppercase;">Live Games</span>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:#ff2952;">23</span>
+      </div>
+      <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#00f0f5;cursor:pointer;">See all →</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 18px 12px;flex-shrink:0;">
+      <div style="background:linear-gradient(145deg,#0e0e30,#101240);border:1px solid rgba(0,240,245,.28);border-radius:13px;padding:12px;cursor:pointer;animation:slide-a .4s .1s ease-out both;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-family:'Space Mono',monospace;font-size:8px;color:#ff2952;letter-spacing:.08em;">● Q4</span>
+          <span style="font-family:'Space Mono',monospace;font-size:8px;color:#4a5a7a;">NBA</span>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:rgba(238,242,255,.55);">LAL</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:rgba(238,242,255,.5);">108</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#00f0f5;">BOS</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#00f0f5;text-shadow:0 0 10px rgba(0,240,245,.5);">112</span>
+          </div>
+        </div>
+        <div style="padding:5px 8px;background:rgba(0,240,245,.12);border:1px solid rgba(0,240,245,.22);border-radius:6px;text-align:center;cursor:pointer;">
+          <span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#00f0f5;">{{ bosMl }}</span>
+        </div>
+      </div>
+      <div style="background:rgba(10,10,26,1);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:12px;cursor:pointer;animation:slide-a .4s .18s ease-out both;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-family:'Space Mono',monospace;font-size:8px;color:#ff2952;letter-spacing:.08em;">● Q3</span>
+          <span style="font-family:'Space Mono',monospace;font-size:8px;color:#4a5a7a;">NBA</span>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#b0bcd8;">GSW</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#b0bcd8;">89</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#eef2ff;">MIL</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#eef2ff;">94</span>
+          </div>
+        </div>
+        <div style="padding:5px 8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;text-align:center;cursor:pointer;">
+          <span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#eef2ff;">+135</span>
+        </div>
+      </div>
+      <div style="background:rgba(10,10,26,1);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:12px;cursor:pointer;animation:slide-b .4s .26s ease-out both;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-family:'Space Mono',monospace;font-size:8px;color:#ff2952;letter-spacing:.08em;">● H2</span>
+          <span style="font-family:'Space Mono',monospace;font-size:8px;color:#4a5a7a;">NBA</span>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#b0bcd8;">MIA</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#b0bcd8;">76</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#eef2ff;">NYK</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#eef2ff;">81</span>
+          </div>
+        </div>
+        <div style="padding:5px 8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;text-align:center;cursor:pointer;">
+          <span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#eef2ff;">+165</span>
+        </div>
+      </div>
+      <div style="background:rgba(10,10,26,1);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:12px;cursor:pointer;animation:slide-b .4s .34s ease-out both;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-family:'Space Mono',monospace;font-size:8px;color:#ff2952;letter-spacing:.08em;">● 3Q</span>
+          <span style="font-family:'Space Mono',monospace;font-size:8px;color:#4a5a7a;">NFL</span>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#eef2ff;">KC</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#eef2ff;">24</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#b0bcd8;">SF</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#b0bcd8;">17</span>
+          </div>
+        </div>
+        <div style="padding:5px 8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;text-align:center;cursor:pointer;">
+          <span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#eef2ff;">-120</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin:0 18px;background:rgba(0,240,245,.04);border:1px solid rgba(0,240,245,.14);border-radius:13px;padding:14px 16px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;color:#eef2ff;text-transform:uppercase;">Active Bets</span>
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:#00e676;">+$48 today</span>
+          <div style="padding:2px 8px;background:rgba(0,240,245,.12);border-radius:4px;"><span style="font-family:'Space Mono',monospace;font-size:9px;color:#00f0f5;">4 open</span></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+        <div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:#c0cae0;">BOS ML — {{ bosMl }}</div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;color:#3d4e6e;margin-top:1px;">$50 stake · to win $62.50</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#00e676;font-weight:700;">+$12.50</div>
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:#3d4e6e;">Winning</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0 0;">
+        <div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:#c0cae0;">MIL -4 SPRD</div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;color:#3d4e6e;margin-top:1px;">$25 stake · to win $22.73</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#ff2952;font-weight:700;">-$2.73</div>
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:#3d4e6e;">Trailing</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position:absolute;bottom:74px;left:0;right:0;height:27px;background:rgba(0,0,8,.97);border-top:1px solid rgba(0,240,245,.2);overflow:hidden;display:flex;align-items:center;z-index:2;">
+      <div style="display:flex;white-space:nowrap;animation:ticker-scroll 22s linear infinite;">
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#00f0f5;padding:0 16px;">● LAL 108 – BOS 112 {{ gameTime }}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;padding:0 16px;">GSW 89 – MIL 94 Q3 5:12</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;padding:0 16px;">MIA 76 – NYK 81 H2 3:22</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;padding:0 16px;">KC 24 – SF 17 3Q 8:45</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;padding:0 16px;">MCI 1 – ARS 2 72'</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#00e676;padding:0 16px;">PHX 98 – DAL 101 Q4 1:54</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#00f0f5;padding:0 16px;">● LAL 108 – BOS 112 {{ gameTime }}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;padding:0 16px;">GSW 89 – MIL 94 Q3 5:12</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;padding:0 16px;">MIA 76 – NYK 81 H2 3:22</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;padding:0 16px;">KC 24 – SF 17 3Q 8:45</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;padding:0 16px;">MCI 1 – ARS 2 72'</span>
+        <span style="font-family:'Space Mono',monospace;font-size:9px;color:#00e676;padding:0 16px;">PHX 98 – DAL 101 Q4 1:54</span>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;display:flex;background:#030310;border-top:1px solid rgba(255,255,255,.07);padding:12px 0 26px;z-index:3;">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:600;color:#00f0f5;">Home</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;">Live</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;">Casino</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="4" width="13" height="12" rx="2" stroke="#3d4e6e" stroke-width="1.5"/><path d="M7 8.5h6M7 12h4" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;">Bets</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7.5" r="3" stroke="#00f0f5" stroke-width="1.5"/><path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;">Account</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════ FRAME 2: ACCOUNT ═══════════════════════════════ -->
+<div style="position:absolute;left:540px;top:48px;width:375px;">
+  <div data-drags-parent="1" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:default;">
+    <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;color:#00f0f5;">02</span>
+    <div style="width:1px;height:9px;background:rgba(0,240,245,.35);flex-shrink:0;"></div>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:rgba(238,242,255,.5);letter-spacing:.1em;text-transform:uppercase;">Account</span>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:rgba(238,242,255,.2);">Record · Friends · Wallet</span>
+  </div>
+  <div data-screen-label="Account" style="width:375px;height:782px;background:#030310;border-radius:22px;border:1px solid rgba(0,240,245,.12);overflow:hidden;box-shadow:0 0 70px rgba(0,240,245,.06),0 30px 90px rgba(0,0,0,.8);animation:frame-in .6s .15s ease-out both;position:relative;display:flex;flex-direction:column;">
+
+    <!-- Status bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 4px;flex-shrink:0;">
+      <span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#eef2ff;">9:41</span>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="6" width="2" height="4" fill="#eef2ff" opacity=".5"/><rect x="3" y="4" width="2" height="6" fill="#eef2ff" opacity=".65"/><rect x="6" y="2" width="2" height="8" fill="#eef2ff" opacity=".8"/><rect x="9" y="0" width="2" height="10" fill="#eef2ff"/></svg>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:#eef2ff;opacity:.8;">5G</span>
+        <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="#eef2ff" stroke-opacity=".35"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="#eef2ff" fill-opacity=".35"/><rect x="2" y="2" width="14" height="7" rx="1.5" fill="#eef2ff" fill-opacity=".9"/></svg>
+      </div>
+    </div>
+
+    <!-- Page header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 18px 12px;flex-shrink:0;">
+      <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:.1em;color:#eef2ff;text-transform:uppercase;">Account</span>
+      <div style="width:32px;height:32px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="2.2" stroke="#eef2ff" stroke-opacity=".55" stroke-width="1.2"/><path d="M7.5 1.2v1.8M7.5 12v1.8M1.2 7.5H3M12 7.5h1.8M3.1 3.1l1.3 1.3M10.6 10.6l1.3 1.3M11.9 3.1l-1.3 1.3M4.4 10.6l-1.3 1.3" stroke="#eef2ff" stroke-opacity=".4" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+
+    <!-- Scrollable content -->
+    <div style="flex:1;overflow-y:auto;padding-bottom:108px;">
+
+      <!-- Profile block -->
+      <div style="display:flex;align-items:center;gap:13px;padding:4px 18px 16px;">
+        <div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#00c0c8,#0050ff);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 22px rgba(0,80,255,.35);">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:white;">JD</span>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;color:#eef2ff;letter-spacing:.02em;">Jordan Diaz</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+            <span style="font-family:'Space Mono',monospace;font-size:11px;color:#4a5a7a;">@jdiaz</span>
+            <div style="padding:1px 7px;background:rgba(0,240,245,.1);border:1px solid rgba(0,240,245,.25);border-radius:4px;"><span style="font-family:'Space Mono',monospace;font-size:9px;color:#00f0f5;letter-spacing:.06em;">VIP · TIER 3</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECORD -->
+      <div style="padding:0 18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:.12em;color:#eef2ff;text-transform:uppercase;">Record</span>
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:#3d4e6e;">{{ totalBets }} settled</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.18);border-radius:12px;padding:13px 10px;text-align:center;">
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:#00e676;line-height:1;text-shadow:0 0 14px rgba(0,230,118,.3);">{{ wins }}</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:rgba(0,230,118,.7);text-transform:uppercase;letter-spacing:.1em;margin-top:5px;">Wins</div>
+          </div>
+          <div style="flex:1;background:rgba(255,41,82,.06);border:1px solid rgba(255,41,82,.18);border-radius:12px;padding:13px 10px;text-align:center;">
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:#ff2952;line-height:1;text-shadow:0 0 14px rgba(255,41,82,.3);">{{ losses }}</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:rgba(255,41,82,.7);text-transform:uppercase;letter-spacing:.1em;margin-top:5px;">Losses</div>
+          </div>
+          <div style="flex:1;background:rgba(0,240,245,.06);border:1px solid rgba(0,240,245,.2);border-radius:12px;padding:13px 10px;text-align:center;">
+            <div style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:#00f0f5;line-height:1;text-shadow:0 0 14px rgba(0,240,245,.35);">{{ winRate }}%</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:rgba(0,240,245,.7);text-transform:uppercase;letter-spacing:.1em;margin-top:5px;">Win Rate</div>
+          </div>
+        </div>
+        <!-- Win/loss bar -->
+        <div style="height:7px;border-radius:4px;overflow:hidden;display:flex;background:rgba(255,255,255,.05);margin-bottom:6px;">
+          <div style="width:{{ winRate }}%;background:linear-gradient(90deg,#00e676,#00c0c8);"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:'Space Mono',monospace;font-size:9px;color:#3d4e6e;">{{ wins }}W</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;color:#4a5a7a;">Net <span style="color:#00e676;">+$1,284</span> lifetime</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9px;color:#3d4e6e;">{{ losses }}L</span>
+        </div>
+      </div>
+
+      <!-- WALLET -->
+      <div style="padding:18px 18px 0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:.12em;color:#eef2ff;text-transform:uppercase;">Wallet</span>
+        </div>
+        <!-- Balances -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <div style="flex:1.3;background:linear-gradient(145deg,#0e0e30,#101240);border:1px solid rgba(0,240,245,.22);border-radius:12px;padding:12px 13px;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#4a5a7a;text-transform:uppercase;letter-spacing:.08em;">Promotional Cash</div>
+            <div style="font-family:'Space Mono',monospace;font-size:21px;font-weight:700;color:#00f0f5;text-shadow:0 0 16px rgba(0,240,245,.4);margin-top:3px;line-height:1;">{{ promoCashFmt }}</div>
+          </div>
+          <div style="flex:1;background:rgba(10,10,26,1);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 13px;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#4a5a7a;text-transform:uppercase;letter-spacing:.08em;">Gems</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:3px;">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/><path d="M1 6h14M5.5 2 4 6l4 8 4-8-1.5-4" stroke="#00f0f5" stroke-width=".8" stroke-opacity=".5"/></svg>
+              <span style="font-family:'Space Mono',monospace;font-size:21px;font-weight:700;color:#eef2ff;line-height:1;">{{ gems }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buy gems -->
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:#c0cae0;">Buy gems</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:10px;color:#3d4e6e;">Get equal promo cash, free</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <sc-for list="{{ packs }}" as="pack" hint-placeholder-count="4">
+            <div onClick="{{ pack.select }}" style="position:relative;border-radius:12px;padding:13px 12px;cursor:pointer;border:1px solid;{{ pack.ring }}">
+              <sc-if value="{{ pack.popular }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:-7px;right:10px;padding:1px 7px;background:#00f0f5;border-radius:4px;"><span style="font-family:'Space Mono',monospace;font-size:8px;font-weight:700;color:#03060a;letter-spacing:.06em;">POPULAR</span></div>
+              </sc-if>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/></svg>
+                <span style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:#eef2ff;">{{ pack.gems }}</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#c0cae0;">{{ pack.priceLabel }}</span>
+                <span style="font-family:'Space Mono',monospace;font-size:10px;color:#00e676;">+{{ pack.priceLabel }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- Promo cash explainer -->
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;padding:9px 12px;background:rgba(0,230,118,.05);border:1px solid rgba(0,230,118,.16);border-radius:10px;">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:1px;"><circle cx="7" cy="7" r="6" stroke="#00e676" stroke-width="1.1"/><path d="M7 6.2v3.4M7 4.3v.1" stroke="#00e676" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:10px;line-height:1.45;color:#7fd8a8;">Every gem purchase instantly credits <span style="color:#00e676;font-weight:600;">promotional cash equal to what you paid</span> — bet with it across the book.</span>
+        </div>
+
+        <!-- Buy confirm bar -->
+        <div onClick="{{ buy }}" style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;border-radius:12px;padding:13px 16px;cursor:pointer;{{ buyBtnStyle }}">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:.05em;color:white;">{{ buyLabel }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,.85);">{{ buySub }}</span>
+        </div>
+      </div>
+
+      <!-- FRIENDS -->
+      <div style="padding:20px 18px 0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:.12em;color:#eef2ff;text-transform:uppercase;">Friends</span>
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:#3d4e6e;">{{ friendCount }} added</span>
+        </div>
+        <!-- Add friend -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <div style="flex:1;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:0 12px;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;"><circle cx="6" cy="6" r="4" stroke="#3d4e6e" stroke-width="1.2"/><path d="M9 9l3 3" stroke="#3d4e6e" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <input value="{{ friendInput }}" onInput="{{ onFriendInput }}" onKeyDown="{{ onFriendKey }}" placeholder="Add by @username" style="flex:1;width:100%;background:transparent;border:none;outline:none;font-family:'Space Mono',monospace;font-size:12px;color:#eef2ff;padding:11px 0;"/>
+          </div>
+          <div onClick="{{ addFriend }}" style="display:flex;align-items:center;justify-content:center;padding:0 16px;background:linear-gradient(135deg,#00c0c8,#0050ff);border-radius:10px;cursor:pointer;box-shadow:0 4px 16px rgba(0,80,255,.25);">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;color:white;">ADD</span>
+          </div>
+        </div>
+        <!-- Friend list -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <sc-for list="{{ friends }}" as="f" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:11px;background:rgba(10,10,26,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 13px;">
+              <div style="width:38px;height:38px;border-radius:50%;background:{{ f.avatarBg }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:white;">{{ f.initials }}</span>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#eef2ff;">{{ f.name }}</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                  <div style="width:6px;height:6px;border-radius:50%;background:{{ f.statusColor }};flex-shrink:0;"></div>
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;color:#4a5a7a;">{{ f.statusText }}</span>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:{{ f.wrColor }};">{{ f.wr }}</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:8px;color:#3d4e6e;text-transform:uppercase;letter-spacing:.1em;">Win rate</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Buy flash toast -->
+    <sc-if value="{{ showFlash }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;bottom:118px;left:18px;right:18px;background:linear-gradient(135deg,#00c0c8,#0050ff);border-radius:11px;padding:11px 15px;display:flex;align-items:center;gap:9px;box-shadow:0 8px 30px rgba(0,80,255,.4);animation:buy-flash 1.8s ease-out both;z-index:5;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="white" stroke-width="1.3"/><path d="M5 8l2 2 4-4.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:white;">{{ flashText }}</span>
+      </div>
+    </sc-if>
+
+    <!-- Bottom nav -->
+    <div style="position:absolute;bottom:0;left:0;right:0;display:flex;background:#030310;border-top:1px solid rgba(255,255,255,.07);padding:12px 0 26px;z-index:3;">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;">Home</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.5" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#3d4e6e"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;">Live</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="#3d4e6e" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="7" r="1.3" fill="#3d4e6e"/><circle cx="10" cy="10" r="1.3" fill="#3d4e6e"/><circle cx="7" cy="13" r="1.3" fill="#3d4e6e"/><circle cx="13" cy="13" r="1.3" fill="#3d4e6e"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;">Casino</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="4" width="13" height="12" rx="2" stroke="#3d4e6e" stroke-width="1.5"/><path d="M7 8.5h6M7 12h4" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;color:#3d4e6e;">Bets</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7.5" r="3" stroke="#00f0f5" stroke-width="1.5"/><path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="#00f0f5" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:600;color:#00f0f5;">Account</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 980, &quot;height&quot;: 950}}">
+class Component extends DCLogic {
+  state = {
+    // home ticker clock
+    min: 2, sec: 34, bos_ml: 125,
+    // account
+    wins: 142,
+    losses: 89,
+    promoCash: 3240.50,
+    gems: 1250,
+    selectedPackId: 'p2',
+    showFlash: false,
+    flashText: '',
+    friendInput: '',
+    friends: [
+      { id: 'f1', name: 'Marcus Tan',  initials: 'MT', status: 'online',  wr: '68%', avatarBg: 'linear-gradient(135deg,#ff6a3d,#ff2952)' },
+      { id: 'f2', name: 'Sara Klein',  initials: 'SK', status: 'betting', wr: '54%', avatarBg: 'linear-gradient(135deg,#00c0c8,#0050ff)' },
+      { id: 'f3', name: 'Devin Royce', initials: 'DR', status: 'offline', wr: '71%', avatarBg: 'linear-gradient(135deg,#7b5cff,#0050ff)' }
+    ]
+  };
+
+  PACKS = [
+    { id: 'p1', gems: 100,  price: 4.99,  popular: false },
+    { id: 'p2', gems: 250,  price: 9.99,  popular: true  },
+    { id: 'p3', gems: 600,  price: 19.99, popular: false },
+    { id: 'p4', gems: 1500, price: 49.99, popular: false }
+  ];
+
+  componentDidMount() {
+    this._clock = setInterval(() => {
+      this.setState(s => {
+        if (s.sec > 0) return { sec: s.sec - 1 };
+        if (s.min > 0) return { min: s.min - 1, sec: 59 };
+        return s;
+      });
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this._clock); if (this._flash) clearTimeout(this._flash); }
+
+  money(n) {
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  selectPack(id) { this.setState({ selectedPackId: id }); }
+
+  buy() {
+    const pack = this.PACKS.find(p => p.id === this.state.selectedPackId);
+    if (!pack) return;
+    if (this._flash) clearTimeout(this._flash);
+    this.setState(s => ({
+      gems: s.gems + pack.gems,
+      promoCash: s.promoCash + pack.price,
+      showFlash: true,
+      flashText: `+${pack.gems} gems · ${this.money(pack.price)} promo cash added`
+    }));
+    this._flash = setTimeout(() => this.setState({ showFlash: false }), 1800);
+  }
+
+  onFriendInput(e) { this.setState({ friendInput: e.target.value }); }
+  onFriendKey(e) { if (e.key === 'Enter') this.addFriend(); }
+
+  addFriend() {
+    const raw = this.state.friendInput.trim().replace(/^@/, '');
+    if (!raw) return;
+    const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+    const initials = (name.slice(0, 2)).toUpperCase();
+    const bgs = ['linear-gradient(135deg,#00e676,#00c0c8)','linear-gradient(135deg,#ff6a3d,#ff2952)','linear-gradient(135deg,#7b5cff,#0050ff)'];
+    this.setState(s => ({
+      friends: [{ id: 'f' + Date.now(), name, initials, status: 'pending', wr: '—', avatarBg: bgs[s.friends.length % bgs.length] }, ...s.friends],
+      friendInput: ''
+    }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const pad = n => String(n).padStart(2, '0');
+    const total = s.wins + s.losses;
+    const winRate = total ? Math.round((s.wins / total) * 100) : 0;
+    const selBase = 'background:rgba(10,10,26,1);border-color:rgba(255,255,255,.08)';
+    const selOn = 'background:rgba(0,240,245,.1);border-color:#00f0f5;box-shadow:0 0 18px rgba(0,240,245,.18)';
+
+    const packs = this.PACKS.map(p => ({
+      gems: p.gems,
+      priceLabel: this.money(p.price),
+      popular: p.popular,
+      ring: p.id === s.selectedPackId ? selOn : selBase,
+      select: () => this.selectPack(p.id)
+    }));
+
+    const sel = this.PACKS.find(p => p.id === s.selectedPackId);
+    const statusMap = {
+      online:  { color: '#00e676', text: 'Online' },
+      betting: { color: '#00f0f5', text: 'Live betting' },
+      offline: { color: '#3d4e6e', text: 'Offline' },
+      pending: { color: '#ffb02e', text: 'Request sent' }
+    };
+    const friends = s.friends.map(f => {
+      const st = statusMap[f.status] || statusMap.offline;
+      return {
+        name: f.name, initials: f.initials, avatarBg: f.avatarBg,
+        statusColor: st.color, statusText: st.text,
+        wr: f.wr, wrColor: f.status === 'pending' ? '#3d4e6e' : '#00f0f5'
+      };
+    });
+
+    return {
+      // home
+      gameTime: `Q4 ${s.min}:${pad(s.sec)}`,
+      bosMl: s.bos_ml > 0 ? `+${s.bos_ml}` : String(s.bos_ml),
+      // record
+      wins: s.wins, losses: s.losses, winRate, totalBets: total,
+      // wallet
+      promoCashFmt: this.money(s.promoCash),
+      gems: s.gems.toLocaleString('en-US'),
+      packs,
+      buy: () => this.buy(),
+      buyLabel: sel ? `Buy ${sel.gems} Gems` : 'Select a pack',
+      buySub: sel ? `${this.money(sel.price)} → +${this.money(sel.price)} promo` : '',
+      buyBtnStyle: sel
+        ? 'background:linear-gradient(135deg,#00c0c8,#0050ff);box-shadow:0 4px 24px rgba(0,80,255,.3)'
+        : 'background:rgba(255,255,255,.06);box-shadow:none',
+      showFlash: s.showFlash,
+      flashText: s.flashText,
+      // friends
+      friends,
+      friendCount: s.friends.length,
+      friendInput: s.friendInput,
+      onFriendInput: (e) => this.onFriendInput(e),
+      onFriendKey: (e) => this.onFriendKey(e),
+      addFriend: () => this.addFriend()
+    };
+  }
+}
+</script>
+</body>
+</html>
