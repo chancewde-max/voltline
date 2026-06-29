@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -18,6 +18,15 @@ import BetsScreen from './src/screens/BetsScreen';
 import { pad2 } from './src/constants';
 
 const W = Dimensions.get('window').width;
+
+const SPORT_ESPN_URLS = {
+  NBA:         'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+  NFL:         'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+  Soccer:      'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
+  NHL:         'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+  UFC:         'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
+  'World Cup': 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
+};
 
 const INITIAL_FRIENDS = [
   { id: 'f1', name: 'Marcus Tan',  initials: 'MT', status: 'online',  wr: '68%' },
@@ -45,6 +54,8 @@ export default function App() {
   const [friends,      setFriends]      = useState(INITIAL_FRIENDS);
   const [betSlip,      setBetSlip]      = useState([]);
   const [placedBets,   setPlacedBets]   = useState([]);
+  const placedBetsRef = useRef([]);
+  useEffect(() => { placedBetsRef.current = placedBets; }, [placedBets]);
 
   // ── Live clock ──
   const [min, setMin] = useState(2);
@@ -61,6 +72,49 @@ export default function App() {
   }, []);
   const gameTime = `Q4 ${min}:${pad2(sec)}`;
   const bosOdds  = '+125';
+
+  // ── Outcome resolution ──
+  useEffect(() => {
+    const resolve = async () => {
+      const pending = placedBetsRef.current.filter(b => b.status === 'pending');
+      if (pending.length === 0) return;
+
+      const sportsNeeded = [...new Set(pending.flatMap(b => b.legs.map(l => l.sport)))];
+      const sportEvents = {};
+      await Promise.all(sportsNeeded.map(async sport => {
+        const url = SPORT_ESPN_URLS[sport];
+        if (!url) return;
+        try {
+          const data = await fetch(url).then(r => r.json());
+          sportEvents[sport] = data.events || [];
+        } catch {}
+      }));
+
+      setPlacedBets(prev => prev.map(bet => {
+        if (bet.status !== 'pending') return bet;
+
+        const legResults = bet.legs.map(leg => {
+          const events = sportEvents[leg.sport] || [];
+          const ev = events.find(e => e.id === leg.gameId);
+          if (!ev) return null;
+          if (ev.status?.type?.description !== 'Final') return null;
+
+          const comps = ev.competitions?.[0]?.competitors || [];
+          const sorted = [...comps].sort((a, b) => parseInt(b.score || 0) - parseInt(a.score || 0));
+          const wonAbbr = sorted[0]?.team?.abbreviation;
+          return wonAbbr === leg.teamAbbr ? 'won' : 'lost';
+        });
+
+        if (legResults.some(r => r === null)) return bet;
+        const anyLost = legResults.some(r => r === 'lost');
+        return { ...bet, status: anyLost ? 'lost' : 'won' };
+      }));
+    };
+
+    resolve();
+    const t = setInterval(resolve, 60000);
+    return () => clearInterval(t);
+  }, []);
 
   // ── Navigation ──
   const homeX    = useRef(new Animated.Value(0)).current;

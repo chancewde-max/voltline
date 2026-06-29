@@ -61,6 +61,11 @@
   .game-card { border-radius: 13px; padding: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,.07); background: rgba(10,10,26,1); animation: slide-in .4s ease-out both; }
   .game-card.featured { background: linear-gradient(145deg,#0e0e30,#101240); border-color: rgba(0,240,245,.28); }
   .game-card.in-slip  { border-color: #ffb02e; background: rgba(255,176,46,.04); }
+  .game-card.card-locked { opacity: 0.6; }
+  .locked-badge { font-size:8px; color:#555; background:rgba(255,255,255,.06); padding:1px 4px; border-radius:3px; margin-left:4px; }
+  .locked-row { cursor: default !important; }
+  .odds-btn.locked { background:rgba(255,255,255,.02); border-color:rgba(255,255,255,.06); color:#444; cursor:default; }
+  .dim { color: #444 !important; }
   .game-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .game-period { font-family: 'Space Mono', monospace; font-size: 8px; color: #ff2952; letter-spacing: .08em; }
   .game-period.dim { color: #4a5a7a; }
@@ -597,7 +602,7 @@ function parseESPN(data, sport) {
     const aNum = parseInt(awayScore) || 0;
     const hNum = parseInt(homeScore) || 0;
     return {
-      id: ev.id, sport, period: periodStr, isLive,
+      id: ev.id, sport, period: periodStr, isLive, isFinal,
       teams: [
         { abbr: awayAbbr, score: awayScore, lead: aNum > hNum },
         { abbr: homeAbbr, score: homeScore, lead: hNum > aNum }
@@ -668,23 +673,24 @@ function renderGames(games, sport) {
   container.innerHTML = '<div class="game-grid">' + games.map((game, idx) => {
     const featured = idx === 0;
     const inSlip   = state.betSlip.some(b => b.gameId === game.id);
+    const locked   = game.isFinal;
     const delay    = idx * 0.08;
     return `
-      <div class="game-card${featured ? ' featured' : ''}${inSlip ? ' in-slip' : ''}" id="card-${game.id}" style="animation-delay:${delay}s">
+      <div class="game-card${featured ? ' featured' : ''}${inSlip ? ' in-slip' : ''}${locked ? ' card-locked' : ''}" id="card-${game.id}" style="animation-delay:${delay}s">
         <div class="game-card-header">
           <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
-          <span class="game-sport">${game.sport}</span>
+          <span class="game-sport">${game.sport}${locked ? ' <span class="locked-badge">LOCKED</span>' : ''}</span>
         </div>
         ${game.teams.map((t, i) => {
           const odds = i === 0 ? game.awayOdds : game.homeOdds;
           const sel  = state.betSlip.some(b => b.id === game.id+'-'+t.abbr);
           const leadClass = t.lead ? (featured && i === 1 ? ' feat' : ' leading') : '';
           return `
-            <div class="game-team-row" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${sport}')">
-              <span class="team-abbr${leadClass}">${t.abbr}</span>
+            <div class="game-team-row${locked ? ' locked-row' : ''}" ${locked ? '' : `onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${sport}')"`}>
+              <span class="team-abbr${leadClass}${locked ? ' dim' : ''}">${t.abbr}</span>
               <div class="team-right">
-                <span class="team-score${leadClass}">${t.score}</span>
-                <span class="odds-btn${sel ? ' sel' : ''}" id="odds-${game.id}-${t.abbr}">${odds}</span>
+                <span class="team-score${leadClass}${locked ? ' dim' : ''}">${t.score}</span>
+                <span class="odds-btn${sel ? ' sel' : ''}${locked ? ' locked' : ''}" id="odds-${game.id}-${t.abbr}">${locked ? '—' : odds}</span>
               </div>
             </div>`;
         }).join('')}
@@ -912,6 +918,52 @@ function renderBets() {
     </div>`;
   }).join('');
 }
+
+// ─── Outcome resolution ───────────────────────────────────────────────────────
+const SPORT_ESPN_URLS = {
+  NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+  NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+  Soccer: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
+  NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+  UFC: 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
+  'World Cup': 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
+};
+async function resolveOutcomes() {
+  const pending = state.placedBets.filter(b => b.status === 'pending');
+  if (pending.length === 0) return;
+
+  const sportsNeeded = [...new Set(pending.flatMap(b => b.legs.map(l => l.sport)))];
+  const sportEvents = {};
+  await Promise.all(sportsNeeded.map(async sport => {
+    const url = SPORT_ESPN_URLS[sport];
+    if (!url) return;
+    try {
+      const data = await fetch(url).then(r => r.json());
+      sportEvents[sport] = data.events || [];
+    } catch {}
+  }));
+
+  let changed = false;
+  state.placedBets = state.placedBets.map(bet => {
+    if (bet.status !== 'pending') return bet;
+    const legResults = bet.legs.map(leg => {
+      const events = sportEvents[leg.sport] || [];
+      const ev = events.find(e => e.id === leg.gameId);
+      if (!ev || ev.status?.type?.description !== 'Final') return null;
+      const comps = ev.competitions?.[0]?.competitors || [];
+      const sorted = [...comps].sort((a, b) => parseInt(b.score || 0) - parseInt(a.score || 0));
+      const wonAbbr = sorted[0]?.team?.abbreviation;
+      return wonAbbr === leg.teamAbbr ? 'won' : 'lost';
+    });
+    if (legResults.some(r => r === null)) return bet;
+    const newStatus = legResults.some(r => r === 'lost') ? 'lost' : 'won';
+    changed = true;
+    return { ...bet, status: newStatus };
+  });
+
+  if (changed && state.screen === 'bets') renderBets();
+}
+setInterval(resolveOutcomes, 60000);
 
 // ─── Live ticker fetch ────────────────────────────────────────────────────────
 const TICKER_URLS = [

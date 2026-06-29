@@ -71,6 +71,7 @@ function parseESPN(data, sport) {
       sport,
       period: periodStr,
       isLive,
+      isFinal,
       teams: [
         { abbr: awayAbbr, score: awayScore, leading: aNum > hNum },
         { abbr: homeAbbr, score: homeScore, leading: hNum > aNum },
@@ -84,7 +85,7 @@ function parseESPN(data, sport) {
 const FALLBACK = {
   Tennis: [
     { id: 't1', sport: 'Tennis', period: '● Set 2', isLive: true,  teams: [{ abbr: 'DJO', score: '6', leading: true  }, { abbr: 'ALC', score: '4', leading: false }], awayOdds: '-155', homeOdds: '+130' },
-    { id: 't2', sport: 'Tennis', period: 'Final',   isLive: false, teams: [{ abbr: 'SIN', score: '3', leading: false }, { abbr: 'MED', score: '3', leading: false }], awayOdds: '+110', homeOdds: '-125' },
+    { id: 't2', sport: 'Tennis', period: 'Final',   isLive: false, isFinal: true, teams: [{ abbr: 'SIN', score: '3', leading: false }, { abbr: 'MED', score: '3', leading: false }], awayOdds: '+110', homeOdds: '-125' },
   ],
   Boxing: [
     { id: 'b1', sport: 'Boxing', period: '● Rd 8',  isLive: true,  teams: [{ abbr: 'FUR', score: '—', leading: false }, { abbr: 'USY', score: '—', leading: false }], awayOdds: '+240', homeOdds: '-285' },
@@ -344,7 +345,10 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
 }
 
 function GameCard({ game, featured, betSlip, onAddBet }) {
+  const locked = game.isFinal;
+
   const handleTeamPress = (teamIdx) => {
+    if (locked) return;
     const team     = game.teams[teamIdx];
     const opponent = game.teams[1 - teamIdx];
     const odds     = teamIdx === 0 ? game.awayOdds : game.homeOdds;
@@ -361,10 +365,13 @@ function GameCard({ game, featured, betSlip, onAddBet }) {
   const anyInSlip = betSlip.some(b => b.gameId === game.id);
 
   return (
-    <View style={[s.card, featured && s.cardFeatured, anyInSlip && s.cardActive]}>
+    <View style={[s.card, featured && s.cardFeatured, anyInSlip && s.cardActive, locked && s.cardLocked]}>
       <View style={s.cardHead}>
         <Text style={[s.cardPeriod, game.isLive && { color: C.red }]}>{game.period}</Text>
-        <Text style={s.cardSport}>{game.sport}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={s.cardSport}>{game.sport}</Text>
+          {locked && <Text style={s.lockedBadge}>LOCKED</Text>}
+        </View>
       </View>
       {game.teams.map((t, i) => {
         const odds = i === 0 ? game.awayOdds : game.homeOdds;
@@ -374,17 +381,18 @@ function GameCard({ game, featured, betSlip, onAddBet }) {
             key={t.abbr}
             style={[s.teamRow, i === 0 && { marginBottom: 5 }]}
             onPress={() => handleTeamPress(i)}
-            activeOpacity={0.7}
+            activeOpacity={locked ? 1 : 0.7}
+            disabled={locked}
           >
-            <Text style={[s.teamAbbr, t.leading && s.teamAbbrLead, featured && t.leading && s.teamAbbrFeat]}>
+            <Text style={[s.teamAbbr, t.leading && s.teamAbbrLead, featured && t.leading && s.teamAbbrFeat, locked && s.dimText]}>
               {t.abbr}
             </Text>
             <View style={s.teamRight}>
-              <Text style={[s.teamScore, t.leading && s.teamScoreLead, featured && t.leading && s.teamScoreFeat]}>
+              <Text style={[s.teamScore, t.leading && s.teamScoreLead, featured && t.leading && s.teamScoreFeat, locked && s.dimText]}>
                 {t.score}
               </Text>
-              <View style={[s.oddsBtn, sel && s.oddsBtnSel]}>
-                <Text style={[s.oddsTxt, sel && s.oddsTxtSel]}>{odds}</Text>
+              <View style={[s.oddsBtn, sel && s.oddsBtnSel, locked && s.oddsBtnLocked]}>
+                <Text style={[s.oddsTxt, sel && s.oddsTxtSel, locked && s.dimText]}>{locked ? '—' : odds}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -426,6 +434,10 @@ const s = StyleSheet.create({
   card:            { width: CARD_W, backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.border, borderRadius: 13, padding: 12 },
   cardFeatured:    { backgroundColor: C.bgCardGlow, borderColor: C.cyanBorderStrong },
   cardActive:      { borderColor: '#ffb02e', backgroundColor: 'rgba(255,176,46,0.04)' },
+  cardLocked:      { opacity: 0.6 },
+  lockedBadge:     { fontFamily: F.groteskSm, fontSize: 8, color: C.dim, backgroundColor: 'rgba(255,255,255,0.07)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 3 },
+  dimText:         { color: C.dim },
+  oddsBtnLocked:   { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' },
   cardHead:        { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   cardPeriod:      { fontFamily: F.mono, fontSize: 8, color: C.dim, letterSpacing: 0.8 },
   cardSport:       { fontFamily: F.mono, fontSize: 8, color: C.dim },
