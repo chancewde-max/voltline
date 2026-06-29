@@ -14,6 +14,7 @@ import { SpaceMono_400Regular, SpaceMono_700Bold } from '@expo-google-fonts/spac
 
 import HomeScreen from './src/screens/HomeScreen';
 import AccountScreen from './src/screens/AccountScreen';
+import BetsScreen from './src/screens/BetsScreen';
 import { pad2 } from './src/constants';
 
 const W = Dimensions.get('window').width;
@@ -43,6 +44,7 @@ export default function App() {
   const [selectedPack, setSelectedPack] = useState('p2');
   const [friends,      setFriends]      = useState(INITIAL_FRIENDS);
   const [betSlip,      setBetSlip]      = useState([]);
+  const [placedBets,   setPlacedBets]   = useState([]);
 
   // ── Live clock ──
   const [min, setMin] = useState(2);
@@ -62,15 +64,22 @@ export default function App() {
 
   // ── Navigation ──
   const homeX    = useRef(new Animated.Value(0)).current;
+  const betsX    = useRef(new Animated.Value(W)).current;
   const accountX = useRef(new Animated.Value(W)).current;
   const [screen, setScreen] = useState('home');
 
   const navigate = (dest) => {
     if (dest === screen) return;
-    const toAccount = dest === 'account';
+    const positions = {
+      home:    { home: 0,    bets: W,    account: W  },
+      bets:    { home: -W,   bets: 0,    account: W  },
+      account: { home: -W,   bets: -W,   account: 0  },
+    };
+    const pos = positions[dest] || positions.home;
     Animated.parallel([
-      Animated.spring(homeX,    { toValue: toAccount ? -W : 0, useNativeDriver: true, tension: 120, friction: 20 }),
-      Animated.spring(accountX, { toValue: toAccount ?  0 : W, useNativeDriver: true, tension: 120, friction: 20 }),
+      Animated.spring(homeX,    { toValue: pos.home,    useNativeDriver: true, tension: 120, friction: 20 }),
+      Animated.spring(betsX,    { toValue: pos.bets,    useNativeDriver: true, tension: 120, friction: 20 }),
+      Animated.spring(accountX, { toValue: pos.account, useNativeDriver: true, tension: 120, friction: 20 }),
     ]).start();
     setScreen(dest);
   };
@@ -88,8 +97,17 @@ export default function App() {
     });
   };
 
-  const placeBet = (amount) => {
+  const placeBet = (amount, payout, combinedOdds) => {
     setPromoCash(p => Math.max(0, p - amount));
+    setPlacedBets(prev => [...prev, {
+      id:           Date.now().toString(),
+      legs:         betSlip,
+      stake:        amount,
+      payout,
+      combinedOdds,
+      status:       'pending',
+      placedAt:     Date.now(),
+    }]);
     setBetSlip([]);
   };
 
@@ -117,6 +135,14 @@ export default function App() {
             betSlip={betSlip}
             onAddBet={addBet}
             onPlaceBet={placeBet}
+          />
+        </Animated.View>
+
+        <Animated.View style={[styles.layer, styles.overlay, { transform: [{ translateX: betsX }] }]}>
+          <BetsScreen
+            placedBets={placedBets}
+            navigate={navigate}
+            gameTime={gameTime}
           />
         </Animated.View>
 

@@ -19,7 +19,7 @@ export default function BottomNav({ current, navigate }) {
       {TABS.map(({ key, label, Icon }) => {
         const active = current === key;
         const color = active ? C.cyan : C.dimmer;
-        const dest = key === 'account' ? 'account' : 'home';
+        const dest = key === 'account' ? 'account' : key === 'bets' ? 'bets' : 'home';
         return (
           <TouchableOpacity
             key={key}

@@ -9,15 +9,16 @@ import { C, F, SCREEN_W, money } from '../constants';
 import BottomNav from '../components/BottomNav';
 import Ticker from '../components/Ticker';
 
-const SPORTS = ['NBA', 'NFL', 'Soccer', 'NHL', 'Tennis', 'UFC', 'Boxing'];
+const SPORTS = ['NBA', 'NFL', 'Soccer', 'NHL', 'Tennis', 'UFC', 'Boxing', 'World Cup'];
 const CARD_W = (SCREEN_W - 36 - 8) / 2;
 
 const ESPN_URLS = {
-  NBA:    'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-  NFL:    'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
-  Soccer: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
-  NHL:    'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-  UFC:    'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
+  NBA:         'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+  NFL:         'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+  Soccer:      'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
+  NHL:         'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+  UFC:         'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
+  'World Cup': 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
 };
 
 function strHash(str) {
@@ -30,8 +31,13 @@ function deterministicOdds(seed) {
   return n < 150 ? `+${110 + (n % 90)}` : `-${115 + (n % 90)}`;
 }
 
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 function parseESPN(data, sport) {
-  return (data.events || []).slice(0, 8).map(ev => {
+  const now = Date.now();
+  return (data.events || [])
+    .filter(ev => Math.abs(new Date(ev.date).getTime() - now) <= SEVEN_DAYS)
+    .slice(0, 8)
+    .map(ev => {
     const comp = ev.competitions?.[0];
     const comps = comp?.competitors || [];
     const away = comps.find(c => c.homeAway === 'away') || comps[0];
@@ -45,7 +51,7 @@ function parseESPN(data, sport) {
     if (isLive) {
       if (sport === 'NBA') periodStr = `● Q${period} ${clock}`;
       else if (sport === 'NFL') periodStr = `● Q${period} ${clock}`;
-      else if (sport === 'Soccer') periodStr = `● ${clock}'`;
+      else if (sport === 'Soccer' || sport === 'World Cup') periodStr = `● ${clock}'`;
       else if (sport === 'NHL') periodStr = `● P${period} ${clock}`;
       else periodStr = '● LIVE';
     } else if (isFinal) {
@@ -319,7 +325,7 @@ export default function HomeScreen({ promoCash, bosOdds, gameTime, navigate, bet
                 activeOpacity={canPlace ? 0.85 : 1}
                 onPress={() => {
                   if (!canPlace) return;
-                  onPlaceBet(stakeNum);
+                  onPlaceBet(stakeNum, payout, combinedOdds);
                   setStake('');
                   closeSlip();
                 }}
