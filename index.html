@@ -14,7 +14,7 @@
   #app { width: 375px; min-height: 100vh; position: relative; overflow: hidden; background: #030310; }
   @media (max-width: 375px) { #app { width: 100%; } }
 
-  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: rgba(3,3,16,0.87); transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease; will-change: transform, opacity; }
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: transparent; transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease; will-change: transform, opacity; }
   .screen.hidden-left  { transform: translateX(-100%); opacity: 0; pointer-events: none; }
   .screen.hidden-right { transform: translateX(100%);  opacity: 0; pointer-events: none; }
 
@@ -280,14 +280,14 @@
   /* BG ANIMATION */
   #bg-anim { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
   .bg-rows { position:absolute; top:-20%; left:-25%; right:-25%; bottom:-20%; transform:rotate(-10deg); display:flex; flex-direction:column; gap:0; }
-  .bg-row { white-space:nowrap; padding:9px 0; font-family:'Space Mono',monospace; font-size:10px; color:rgba(0,240,245,0.13); letter-spacing:.04em; }
+  .bg-row { white-space:nowrap; padding:9px 0; font-family:'Space Mono',monospace; font-size:10px; color:rgba(0,240,245,0.22); letter-spacing:.04em; }
   .bg-row.go-l { animation:odds-go-l 22s linear infinite; }
   .bg-row.go-r { animation:odds-go-r 26s linear infinite; }
   .money-layer { position:absolute; inset:0; }
   .money-drop { position:absolute; top:-40px; color:rgba(0,230,118,0.55); font-family:'Space Mono',monospace; font-weight:700; animation:money-fall linear infinite; user-select:none; }
 
   /* AUTH SCREENS */
-  .screen.auth-bg { background:rgba(3,3,16,0.82) !important; }
+  .screen.auth-bg { background:transparent !important; }
   .auth-content { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 28px; animation:auth-in .5s ease-out both; }
   .auth-logo { font-family:'Rajdhani',sans-serif; font-size:46px; font-weight:700; letter-spacing:2px; color:#eef2ff; margin-bottom:6px; text-align:center; }
   .auth-logo span { color:#00f0f5; }
@@ -2068,7 +2068,7 @@ function initBgAnim() {
     d.style.animationDuration = (9 + Math.random() * 14) + 's';
     d.style.animationDelay = -(Math.random() * 18) + 's';
     d.style.fontSize = (11 + Math.random() * 9) + 'px';
-    d.style.opacity = (0.3 + Math.random() * 0.5).toFixed(2);
+    d.style.opacity = (0.5 + Math.random() * 0.5).toFixed(2);
     layer.appendChild(d);
   }
 }
