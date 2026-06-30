@@ -64,7 +64,11 @@
   .see-all { font-size: 11px; color: #00f0f5; cursor: pointer; }
 
   .games-area { flex: 1; overflow-y: auto; }
-  .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 18px 12px; }
+  .game-grid { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 0 18px 12px; }
+  .mkt-row { display:grid; grid-template-columns:34px 26px 1fr 50px 46px 56px; gap:3px; align-items:center; margin-bottom:5px; }
+  .mkt-row:last-child { margin-bottom:0; }
+  .mkt-header { display:grid; grid-template-columns:34px 26px 1fr 50px 46px 56px; gap:3px; margin-bottom:3px; }
+  .mkt-label { font-family:'Space Mono',monospace; font-size:8px; color:#3d4e6e; text-align:center; letter-spacing:.04em; }
   .game-card { border-radius: 13px; padding: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,.07); background: rgba(10,10,26,1); animation: slide-in .4s ease-out both; }
   .game-card.featured { background: linear-gradient(145deg,#0e0e30,#101240); border-color: rgba(0,240,245,.28); }
   .game-card.in-slip  { border-color: #ffb02e; background: rgba(255,176,46,.04); }
@@ -1082,6 +1086,31 @@ function deterministicOdds(seed) {
   return n < 150 ? `+${110 + (n % 90)}` : `-${115 + (n % 90)}`;
 }
 
+const SPORT_TOTALS = { NBA:225.5, NFL:46.5, MLB:8.5, NHL:5.5, Soccer:2.5, 'World Cup':2.5, UFC:1.5, Boxing:9.5 };
+
+function getSpread(game, teamIdx) {
+  if (teamIdx === 0) {
+    const line = game.awaySpreadLine ?? (() => {
+      const isFav = parseInt(game.awayOdds || '0') < 0;
+      const v = (((strHash(game.id + 'aspd') % 12) + 1) + 0.5).toFixed(1);
+      return isFav ? '-' + v : '+' + v;
+    })();
+    return { line, odds: game.awaySpreadOdds ?? '-110' };
+  }
+  const line = game.homeSpreadLine ?? (() => {
+    const isFav = parseInt(game.homeOdds || '0') < 0;
+    const v = (((strHash(game.id + 'hspd') % 12) + 1) + 0.5).toFixed(1);
+    return isFav ? '-' + v : '+' + v;
+  })();
+  return { line, odds: game.homeSpreadOdds ?? '-110' };
+}
+
+function getTotal(game) {
+  const base = SPORT_TOTALS[game.sport] || 7.5;
+  const line = game.totalLine != null ? game.totalLine : +(base + ((strHash(game.id + 'tot') % 10) - 5) * 0.5).toFixed(1);
+  return { line, overOdds: game.overOdds ?? '-110', underOdds: game.underOdds ?? '-110' };
+}
+
 function parseESPN(data, sport) {
   const now = Date.now();
   return (data.events || [])
@@ -1247,7 +1276,9 @@ async function renderForYou() {
         data = await fetch(url).then(r => r.json());
         games = parseESPN(data, sport);
       }
-      sportGames[sport] = games.length ? games : (FALLBACK_GAMES[sport] || []);
+      let enriched = games.length ? games : (FALLBACK_GAMES[sport] || []);
+      if (enriched.length && ODDS_SPORT_KEYS[sport]) enriched = await enrichGamesWithOdds(enriched, sport);
+      sportGames[sport] = enriched;
     } catch { sportGames[sport] = FALLBACK_GAMES[sport] || []; }
   }));
 
@@ -1270,6 +1301,7 @@ function renderForYouCards() {
   }
   feed.innerHTML = list.map(({ game, reason }, idx) => {
     const inSlip = state.betSlip.some(b => b.gameId === game.id);
+    const tot = getTotal(game);
     return `
       <div class="game-card foryou-card${inSlip ? ' in-slip' : ''}" style="animation-delay:${idx * 0.06}s">
         <div class="reason">${reason}</div>
@@ -1277,18 +1309,24 @@ function renderForYouCards() {
           <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
           <span class="game-sport">${game.sport}</span>
         </div>
+        <div class="mkt-header"><span></span><span></span><span class="mkt-label">SPR</span><span class="mkt-label">ML</span><span class="mkt-label">O/U</span></div>
         ${game.teams.map((t, i) => {
-          const odds = i === 0 ? game.awayOdds : game.homeOdds;
-          const sel  = state.betSlip.some(b => b.id === game.id + '-' + t.abbr);
-          const leadClass = t.lead ? ' leading' : '';
-          return `
-            <div class="game-team-row" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${game.sport}')">
-              <span class="team-abbr${leadClass}">${t.abbr}</span>
-              <div class="team-right">
-                <span class="team-score${leadClass}">${t.score}</span>
-                <span class="odds-btn${sel ? ' sel' : ''}">${odds}</span>
-              </div>
-            </div>`;
+          const ml = i === 0 ? game.awayOdds : game.homeOdds;
+          const spr = getSpread(game, i);
+          const ouSide = i === 0 ? 'over' : 'under';
+          const ouLabel = `${i === 0 ? 'O' : 'U'} ${tot.line}`;
+          const ouOdds  = i === 0 ? tot.overOdds : tot.underOdds;
+          const selML  = state.betSlip.some(b => b.id === `${game.id}-ml-${t.abbr}`);
+          const selSpr = state.betSlip.some(b => b.id === `${game.id}-spr-${t.abbr}`);
+          const selOU  = state.betSlip.some(b => b.id === `${game.id}-ou-${ouSide}`);
+          const lc = t.lead ? ' leading' : '';
+          return `<div class="mkt-row">
+            <span class="team-abbr${lc}">${t.abbr}</span>
+            <span class="team-score${lc}">${t.score}</span>
+            <span class="odds-btn${selSpr?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spr.odds}','${game.sport}','spr','${spr.line}')">${spr.line}</span>
+            <span class="odds-btn${selML?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${ml}','${game.sport}','ml','')">${ml}</span>
+            <span class="odds-btn${selOU?' sel':''}" onclick="toggleBet('${game.id}','${ouSide}','','${ouOdds}','${game.sport}','ou','${tot.line}')">${ouLabel}</span>
+          </div>`;
         }).join('')}
       </div>`;
   }).join('');
@@ -1361,25 +1399,34 @@ async function fetchGames(sport) {
 function gameCardHTML(game, sport, featured) {
   const inSlip = state.betSlip.some(b => b.gameId === game.id);
   const locked = game.isFinal;
+  const tot = locked ? null : getTotal(game);
   return `
     <div class="game-card${featured ? ' featured' : ''}${inSlip ? ' in-slip' : ''}${locked ? ' card-locked' : ''}" id="card-${game.id}">
       <div class="game-card-header card-clickable-header" onclick="openGame('${game.id}')">
         <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
         <span class="game-sport">${game.sport}${locked ? ' <span class="locked-badge">LOCKED</span>' : ''} <span style="color:#2a3a5a;font-size:11px">›</span></span>
       </div>
+      ${locked
+        ? game.teams.map(t => `<div class="game-team-row locked-row"><span class="team-abbr dim">${t.abbr}</span><div class="team-right"><span class="team-score dim">${t.score}</span><span class="odds-btn locked">—</span></div></div>`).join('')
+        : `<div class="mkt-header"><span></span><span></span><span class="mkt-label">SPR</span><span class="mkt-label">ML</span><span class="mkt-label">O/U</span></div>
       ${game.teams.map((t, i) => {
-        const odds = i === 0 ? game.awayOdds : game.homeOdds;
-        const sel  = state.betSlip.some(b => b.id === game.id+'-'+t.abbr);
-        const leadClass = t.lead ? (featured && i === 1 ? ' feat' : ' leading') : '';
-        return `
-          <div class="game-team-row${locked ? ' locked-row' : ''}" ${locked ? '' : `onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${odds}','${sport}')"`}>
-            <span class="team-abbr${leadClass}${locked ? ' dim' : ''}">${t.abbr}</span>
-            <div class="team-right">
-              <span class="team-score${leadClass}${locked ? ' dim' : ''}">${t.score}</span>
-              <span class="odds-btn${sel ? ' sel' : ''}${locked ? ' locked' : ''}" id="odds-${game.id}-${t.abbr}">${locked ? '—' : odds}</span>
-            </div>
-          </div>`;
-      }).join('')}
+        const ml = i === 0 ? game.awayOdds : game.homeOdds;
+        const spr = getSpread(game, i);
+        const ouSide = i === 0 ? 'over' : 'under';
+        const ouLabel = `${i === 0 ? 'O' : 'U'} ${tot.line}`;
+        const ouOdds  = i === 0 ? tot.overOdds : tot.underOdds;
+        const selML  = state.betSlip.some(b => b.id === `${game.id}-ml-${t.abbr}`);
+        const selSpr = state.betSlip.some(b => b.id === `${game.id}-spr-${t.abbr}`);
+        const selOU  = state.betSlip.some(b => b.id === `${game.id}-ou-${ouSide}`);
+        const lc = t.lead ? ' leading' : '';
+        return `<div class="mkt-row">
+          <span class="team-abbr${lc}">${t.abbr}</span>
+          <span class="team-score${lc}">${t.score}</span>
+          <span class="odds-btn${selSpr?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spr.odds}','${sport}','spr','${spr.line}')">${spr.line}</span>
+          <span class="odds-btn${selML?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${ml}','${sport}','ml','')">${ml}</span>
+          <span class="odds-btn${selOU?' sel':''}" onclick="toggleBet('${game.id}','${ouSide}','','${ouOdds}','${sport}','ou','${tot.line}')">${ouLabel}</span>
+        </div>`;
+      }).join('')}`}
     </div>`;
 }
 
@@ -1563,18 +1610,20 @@ function renderGdBody() {
   }
 }
 
-function toggleBet(gameId, teamAbbr, opponent, odds, sport) {
-  const betId = gameId + '-' + teamAbbr;
+function toggleBet(gameId, side, opponent, odds, sport, market='ml', line='') {
+  const betId = `${gameId}-${market}-${side}`;
   const exists = state.betSlip.findIndex(b => b.id === betId);
   if (exists >= 0) {
     state.betSlip.splice(exists, 1);
   } else {
-    // Remove any other bet from same game (can't bet both sides)
-    state.betSlip = state.betSlip.filter(b => b.gameId !== gameId);
-    state.betSlip.push({ id: betId, gameId, teamAbbr, opponent, odds, sport });
+    // Remove opposite side of same market (can't have over+under or both ML sides)
+    state.betSlip = state.betSlip.filter(b => !(b.gameId === gameId && b.market === market));
+    const label = market === 'ml'  ? `${side} ML`
+                : market === 'spr' ? `${side} ${line}`
+                : `${side === 'over' ? 'OVER' : 'UNDER'} ${line}`;
+    state.betSlip.push({ id: betId, gameId, teamAbbr: side, opponent, odds, sport, market, line, label });
   }
   updateSlipBar();
-  // Re-render to refresh card border + odds highlights
   refreshActiveBoard();
 }
 
@@ -1640,8 +1689,8 @@ function renderSlipModal() {
   document.getElementById('slip-bets').innerHTML = state.betSlip.map(b => `
     <div class="slip-row">
       <div class="slip-bet-info">
-        <div class="slip-bet-team">${b.teamAbbr} Moneyline</div>
-        <div class="slip-bet-meta">${b.sport} · vs ${b.opponent}</div>
+        <div class="slip-bet-team">${b.label || b.teamAbbr + ' ML'}</div>
+        <div class="slip-bet-meta">${b.sport}${b.opponent ? ' · vs ' + b.opponent : ''}</div>
       </div>
       <span class="slip-bet-odds">${b.odds}</span>
       <span class="slip-remove" onclick="removeBet('${b.id}')">✕</span>
