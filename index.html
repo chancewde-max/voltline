@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="expires" content="0">
 <title>VOLTLINE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -10,8 +13,8 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   ::-webkit-scrollbar { width: 0; height: 0; }
   html { height: 100%; background: #020209; }
-  body { height: 100%; min-height: -webkit-fill-available; background: #020209; font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; }
-  #app { width: 375px; height: 100vh; height: -webkit-fill-available; max-height: 100vh; position: relative; overflow: hidden; background: #030310; }
+  body { height: 100%; background: #020209; font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; }
+  #app { width: 375px; height: 100vh; height: 100svh; position: relative; overflow: hidden; background: #030310; }
   @media (max-width: 375px) { #app { width: 100%; } }
 
   .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: transparent; transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease; will-change: transform, opacity; }
@@ -767,7 +770,7 @@
         </div>
       </div>
       <div class="friends-section">
-        <div class="section-header"><span class="section-title">Friends</span><span class="section-meta" id="friend-count">3 added</span></div>
+        <div class="section-header"><span class="section-title">Friends</span><span class="section-meta" id="friend-count">0 added</span></div>
         <div class="add-friend-row">
           <div class="friend-input-wrap">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="6" cy="6" r="4" stroke="#3d4e6e" stroke-width="1.2"/><path d="M9 9l3 3" stroke="#3d4e6e" stroke-width="1.2" stroke-linecap="round"/></svg>
@@ -917,11 +920,7 @@ const state = {
   betSlip: [],
   placedBets: [],
   currentUser: null,
-  friends: [
-    { id:'f1', name:'Marcus Tan',  initials:'MT', status:'online',  wr:'68%', bg:'linear-gradient(135deg,#ff6a3d,#ff2952)' },
-    { id:'f2', name:'Sara Klein',  initials:'SK', status:'betting', wr:'54%', bg:'linear-gradient(135deg,#00c0c8,#0050ff)' },
-    { id:'f3', name:'Devin Royce', initials:'DR', status:'offline', wr:'71%', bg:'linear-gradient(135deg,#7b5cff,#0050ff)' }
-  ],
+  friends: [],
   min: 2, sec: 34
 };
 
