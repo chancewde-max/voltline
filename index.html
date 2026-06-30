@@ -9,9 +9,9 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   ::-webkit-scrollbar { width: 0; height: 0; }
-  html, body { height: 100%; background: #020209; font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; }
-  body { display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
-  #app { width: 375px; min-height: 100vh; position: relative; overflow: hidden; background: #030310; }
+  html { height: 100%; background: #020209; }
+  body { height: 100%; min-height: -webkit-fill-available; background: #020209; font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; }
+  #app { width: 375px; height: 100vh; height: -webkit-fill-available; max-height: 100vh; position: relative; overflow: hidden; background: #030310; }
   @media (max-width: 375px) { #app { width: 100%; } }
 
   .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: transparent; transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease; will-change: transform, opacity; }
@@ -277,9 +277,38 @@
   .card-clickable-header { cursor: pointer; }
   .card-clickable-header:hover .game-sport { color: #00c0c8; }
 
+  /* DEPOSIT PACKS */
+  .deposit-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .deposit-card { position:relative; border-radius:12px; padding:14px 13px; cursor:pointer; border:1px solid rgba(255,255,255,.08); background:rgba(10,10,26,1); transition:border-color .15s,background .15s,box-shadow .15s; -webkit-tap-highlight-color:transparent; }
+  .deposit-card.selected { background:rgba(0,240,245,.1); border-color:#00f0f5; box-shadow:0 0 18px rgba(0,240,245,.18); }
+  .deposit-card.popular-dep::before { content:'POPULAR'; position:absolute; top:-8px; right:10px; padding:1px 7px; background:#00f0f5; border-radius:4px; font-family:'Space Mono',monospace; font-size:8px; font-weight:700; color:#03060a; letter-spacing:.06em; }
+  .dep-amount { font-family:'Space Mono',monospace; font-size:18px; font-weight:700; color:#eef2ff; margin-bottom:3px; }
+  .dep-bonus { font-family:'Space Mono',monospace; font-size:10px; color:#00e676; }
+
+  /* CHECKOUT SCREEN */
+  .checkout-header { display:flex; align-items:center; gap:14px; padding:14px 18px 12px; border-bottom:1px solid rgba(255,255,255,.07); flex-shrink:0; }
+  .checkout-back { font-family:'Space Mono',monospace; font-size:12px; color:#4a5a7a; cursor:pointer; }
+  .checkout-title { font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700; letter-spacing:.1em; color:#eef2ff; text-transform:uppercase; }
+  .checkout-body { flex:1; overflow-y:auto; padding:18px 18px 100px; }
+  .checkout-summary { background:linear-gradient(145deg,#0e0e30,#101240); border:1px solid rgba(0,240,245,.22); border-radius:14px; padding:18px; margin-bottom:20px; }
+  .checkout-sum-label { font-family:'Space Grotesk',sans-serif; font-size:10px; font-weight:600; color:#4a5a7a; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .checkout-sum-amount { font-family:'Space Mono',monospace; font-size:32px; font-weight:700; color:#00f0f5; text-shadow:0 0 20px rgba(0,240,245,.4); }
+  .checkout-sum-bonus { font-family:'Space Grotesk',sans-serif; font-size:12px; color:#00e676; margin-top:4px; }
+  .checkout-form-title { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; letter-spacing:1.2px; color:#4a5a7a; text-transform:uppercase; margin-bottom:12px; }
+  .checkout-field { margin-bottom:12px; }
+  .checkout-label { font-family:'Space Grotesk',sans-serif; font-size:10px; font-weight:600; color:#4a5a7a; text-transform:uppercase; letter-spacing:.8px; margin-bottom:5px; }
+  .checkout-input { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:11px; padding:13px 15px; font-family:'Space Mono',monospace; font-size:14px; color:#eef2ff; outline:none; transition:border-color .15s; box-sizing:border-box; }
+  .checkout-input::placeholder { color:#2a3a5a; }
+  .checkout-input:focus { border-color:rgba(0,240,245,.4); background:rgba(0,240,245,.03); }
+  .checkout-row { display:flex; gap:10px; }
+  .checkout-row .checkout-field { flex:1; }
+  .checkout-complete-btn { display:block; width:100%; margin-top:18px; padding:15px; background:linear-gradient(90deg,#00c0c8,#0050ff); border-radius:13px; text-align:center; font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:700; letter-spacing:.08em; color:white; cursor:pointer; transition:opacity .15s; box-shadow:0 4px 24px rgba(0,80,255,.35); }
+  .checkout-complete-btn:active { opacity:.85; }
+  .checkout-secure { text-align:center; margin-top:10px; font-family:'Space Mono',monospace; font-size:9px; color:#2a3a5a; letter-spacing:.5px; }
+
   /* BG ANIMATION */
   #bg-anim { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
-  .bg-rows { position:absolute; top:-40%; left:-30%; right:-30%; bottom:-40%; transform:rotate(-10deg); display:flex; flex-direction:column; gap:0; min-height:200%; }
+  .bg-rows { position:absolute; top:-50%; left:-30%; right:-30%; bottom:-50%; transform:rotate(-10deg); display:flex; flex-direction:column; gap:0; }
   .bg-row { white-space:nowrap; padding:9px 0; font-family:'Space Mono',monospace; font-size:10px; color:rgba(0,240,245,0.22); letter-spacing:.04em; }
   .bg-row.go-l { animation:odds-go-l 22s linear infinite; }
   .bg-row.go-r { animation:odds-go-r 26s linear infinite; }
@@ -723,18 +752,18 @@
       <div class="wallet-section">
         <div class="section-header"><span class="section-title">Wallet</span></div>
         <div class="balance-tiles">
-          <div class="promo-tile"><div class="tile-label">Promotional Cash</div><div class="promo-amount" id="promo-cash">$3,240.50</div></div>
-          <div class="gems-tile"><div class="tile-label">Gems</div><div class="gems-row"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/><path d="M1 6h14M5.5 2 4 6l4 8 4-8-1.5-4" stroke="#00f0f5" stroke-width=".8" stroke-opacity=".5"/></svg><span class="gems-count" id="gems-count">1,250</span></div></div>
+          <div class="promo-tile"><div class="tile-label">Promotional Cash</div><div class="promo-amount" id="promo-cash">$0.00</div></div>
+          <div class="gems-tile"><div class="tile-label">Gems</div><div class="gems-row"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/><path d="M1 6h14M5.5 2 4 6l4 8 4-8-1.5-4" stroke="#00f0f5" stroke-width=".8" stroke-opacity=".5"/></svg><span class="gems-count" id="gems-count">0</span></div></div>
         </div>
-        <div class="buy-header"><span class="buy-title">Buy gems</span><span class="buy-subtitle">Get equal promo cash, free</span></div>
-        <div class="pack-grid" id="pack-grid"></div>
+        <div class="buy-header"><span class="buy-title">Add Funds</span><span class="buy-subtitle">+ bonus promo cash</span></div>
+        <div class="deposit-grid" id="pack-grid"></div>
         <div class="promo-explainer">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="7" cy="7" r="6" stroke="#00e676" stroke-width="1.1"/><path d="M7 6.2v3.4M7 4.3v.1" stroke="#00e676" stroke-width="1.3" stroke-linecap="round"/></svg>
-          <span class="explainer-text">Every gem purchase instantly credits <strong>promotional cash equal to what you paid</strong> — bet with it across the book.</span>
+          <span class="explainer-text">Every deposit instantly credits <strong>bonus promotional cash</strong> on top — use it to bet across the book.</span>
         </div>
-        <div class="buy-btn" id="buy-btn" onclick="buyPack()">
-          <span class="buy-btn-label" id="buy-label">Buy 250 Gems</span>
-          <span class="buy-btn-sub" id="buy-sub">$9.99 → +$9.99 promo cash</span>
+        <div class="buy-btn" id="buy-btn" onclick="goCheckout()">
+          <span class="buy-btn-label" id="buy-label">Deposit $250</span>
+          <span class="buy-btn-sub" id="buy-sub">+ $25 bonus promo cash</span>
         </div>
       </div>
       <div class="friends-section">
@@ -797,6 +826,43 @@
       <div class="gd-tab" id="gd-tab-SPREADS" onclick="setGdTab('SPREADS')">SPREADS</div>
     </div>
     <div class="gd-body" id="gd-body"></div>
+  </div>
+
+  <!-- CHECKOUT SCREEN -->
+  <div class="screen hidden-right" id="screen-checkout">
+    <div class="checkout-header">
+      <span class="checkout-back" onclick="navigate('account')">←</span>
+      <span class="checkout-title">Checkout</span>
+    </div>
+    <div class="checkout-body">
+      <div class="checkout-summary">
+        <div class="checkout-sum-label">Depositing</div>
+        <div class="checkout-sum-amount" id="co-amount">$0.00</div>
+        <div class="checkout-sum-bonus" id="co-bonus">+ $0.00 bonus promo cash</div>
+      </div>
+      <div class="checkout-form-title">Payment Details</div>
+      <div class="checkout-field">
+        <div class="checkout-label">Card Number</div>
+        <input class="checkout-input" id="co-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)">
+      </div>
+      <div class="checkout-row">
+        <div class="checkout-field">
+          <div class="checkout-label">Expiry</div>
+          <input class="checkout-input" id="co-exp" type="text" placeholder="MM / YY" maxlength="7" oninput="fmtExp(this)">
+        </div>
+        <div class="checkout-field">
+          <div class="checkout-label">CVV</div>
+          <input class="checkout-input" id="co-cvv" type="text" placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
+        </div>
+      </div>
+      <div class="checkout-field">
+        <div class="checkout-label">Name on Card</div>
+        <input class="checkout-input" id="co-name" type="text" placeholder="Jordan Diaz">
+      </div>
+      <div id="co-error" style="font-family:'Space Mono',monospace;font-size:10px;color:#ff2952;min-height:16px;margin-top:4px;text-align:center"></div>
+      <div class="checkout-complete-btn" onclick="completePurchase()">COMPLETE PURCHASE</div>
+      <div class="checkout-secure">🔒 256-bit SSL encrypted · Payments processed securely</div>
+    </div>
   </div>
 
   <!-- Shared bet slip bar (above ticker; shows on Home/Live) -->
@@ -869,10 +935,10 @@ const MOCK_USERS = [
 ];
 
 const PACKS = [
-  { id:'p1', gems:100,  price:4.99,  popular:false },
-  { id:'p2', gems:250,  price:9.99,  popular:true  },
-  { id:'p3', gems:600,  price:19.99, popular:false },
-  { id:'p4', gems:1500, price:49.99, popular:false }
+  { id:'p1', amount:100,  bonus:10,  popular:false },
+  { id:'p2', amount:250,  bonus:25,  popular:true  },
+  { id:'p3', amount:500,  bonus:75,  popular:false },
+  { id:'p4', amount:1000, bonus:200, popular:false },
 ];
 
 const STATUS_MAP = {
@@ -1061,7 +1127,7 @@ function parseESPN(data, sport) {
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-const SCREEN_ORDER = ['login', 'signup', 'admin', 'home', 'live', 'casino', 'bets', 'account'];
+const SCREEN_ORDER = ['login', 'signup', 'admin', 'home', 'live', 'casino', 'bets', 'account', 'checkout'];
 function navigate(screen) {
   const from = document.getElementById('screen-' + state.screen);
   const to   = document.getElementById('screen-' + screen);
@@ -1805,14 +1871,9 @@ function renderPacks() {
   document.getElementById('pack-grid').innerHTML = PACKS.map(p => {
     const sel = p.id === state.selectedPack;
     return `
-      <div class="pack-card${sel ? ' selected' : ''}" onclick="selectPack('${p.id}')">
-        ${p.popular ? '<div class="pack-popular">POPULAR</div>' : ''}
-        <div class="pack-gems-row">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/></svg>
-          <span class="pack-gems-count">${p.gems} gems</span>
-        </div>
-        <div class="pack-promo-cash">+${money(p.price)} promo cash</div>
-        <div class="pack-price">${money(p.price)}</div>
+      <div class="deposit-card${sel ? ' selected' : ''}${p.popular ? ' popular-dep' : ''}" onclick="selectPack('${p.id}')">
+        <div class="dep-amount">${money(p.amount)}</div>
+        <div class="dep-bonus">+${money(p.bonus)} bonus</div>
       </div>`;
   }).join('');
 }
@@ -1822,19 +1883,57 @@ function selectPack(id) { state.selectedPack = id; renderPacks(); updateBuyBtn()
 function updateBuyBtn() {
   const pack = PACKS.find(p => p.id === state.selectedPack);
   if (!pack) return;
-  document.getElementById('buy-label').textContent = `Buy ${pack.gems} Gems`;
-  document.getElementById('buy-sub').textContent   = `${money(pack.price)} → +${money(pack.price)} promo cash`;
+  document.getElementById('buy-label').textContent = `Deposit ${money(pack.amount)}`;
+  document.getElementById('buy-sub').textContent   = `+ ${money(pack.bonus)} bonus promo cash`;
 }
 
-function buyPack() {
+function goCheckout() {
   const pack = PACKS.find(p => p.id === state.selectedPack);
   if (!pack) return;
-  state.gems += pack.gems;
-  state.promoCash += pack.price;
-  document.getElementById('promo-cash').textContent   = money(state.promoCash);
-  document.getElementById('gems-count').textContent   = state.gems.toLocaleString('en-US');
+  state.pendingDeposit = pack;
+  document.getElementById('co-amount').textContent = money(pack.amount);
+  document.getElementById('co-bonus').textContent  = `+ ${money(pack.bonus)} bonus promo cash`;
+  // Pre-fill name from account
+  const nameEl = document.getElementById('co-name');
+  if (nameEl && state.currentUser) nameEl.value = state.currentUser.name || '';
+  document.getElementById('co-error').textContent = '';
+  navigate('checkout');
+}
+
+function completePurchase() {
+  const card = document.getElementById('co-card').value.replace(/\s/g,'');
+  const exp  = document.getElementById('co-exp').value;
+  const cvv  = document.getElementById('co-cvv').value;
+  const name = document.getElementById('co-name').value.trim();
+  const errEl = document.getElementById('co-error');
+  if (card.length < 16) { errEl.textContent = 'Enter a valid card number.'; return; }
+  if (exp.length < 5)   { errEl.textContent = 'Enter a valid expiry date.'; return; }
+  if (cvv.length < 3)   { errEl.textContent = 'Enter a valid CVV.'; return; }
+  if (!name)            { errEl.textContent = 'Enter the name on your card.'; return; }
+  errEl.textContent = '';
+  const pack = state.pendingDeposit;
+  if (!pack) return;
+  state.promoCash += pack.amount + pack.bonus;
+  state.gems      += Math.floor(pack.amount / 10);
+  // Persist to account
+  if (state.currentUser) {
+    const accounts = getAccounts();
+    const idx = accounts.findIndex(a => a.id === state.currentUser.id);
+    if (idx >= 0) { accounts[idx].balance = state.promoCash; accounts[idx].gems = state.gems; saveAccounts(accounts); state.currentUser = accounts[idx]; }
+  }
   updateBalances();
-  showToast(`+${pack.gems} gems · ${money(pack.price)} promo cash added`);
+  navigate('account');
+  showToast(`${money(pack.amount)} deposited · +${money(pack.bonus)} bonus added!`);
+}
+
+function fmtCard(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,16);
+  el.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function fmtExp(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,4);
+  if (v.length >= 3) v = v.slice(0,2) + ' / ' + v.slice(2);
+  el.value = v;
 }
 
 let toastTimer = null;
@@ -1850,34 +1949,80 @@ function showToast(msg) {
 }
 
 // ─── Friends ──────────────────────────────────────────────────────────────────
+const FRIEND_BG_POOL = [
+  'linear-gradient(135deg,#ff6a3d,#ff2952)',
+  'linear-gradient(135deg,#00c0c8,#0050ff)',
+  'linear-gradient(135deg,#7b5cff,#0050ff)',
+  'linear-gradient(135deg,#00e676,#00c0c8)',
+  'linear-gradient(135deg,#ffb02e,#ff6a3d)',
+];
+function friendsKey() { return 'vl_friends_' + (state.currentUser?.id || 'guest'); }
+function getFriendIds() { try { return JSON.parse(localStorage.getItem(friendsKey()) || '[]'); } catch { return []; } }
+function saveFriendIds(ids) { localStorage.setItem(friendsKey(), JSON.stringify(ids)); }
+
+function onlineStatus(user) {
+  // Deterministic simulated status based on user id hash + current minute bucket
+  const bucket = Math.floor(Date.now() / 120000);
+  let h = 0;
+  const seed = (user.id || '') + bucket;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const r = h % 10;
+  if (r < 3) return 'online';
+  if (r < 5) return 'betting';
+  return 'offline';
+}
+
 function renderFriends() {
-  document.getElementById('friends-list').innerHTML = state.friends.map(f => {
-    const st = STATUS_MAP[f.status] || STATUS_MAP.offline;
+  const accounts = getAccounts();
+  const ids = getFriendIds();
+  const meId = state.currentUser?.id;
+  const friends = ids.map(id => accounts.find(a => a.id === id)).filter(Boolean);
+  const bgs = FRIEND_BG_POOL;
+  document.getElementById('friends-list').innerHTML = friends.map((f, i) => {
+    const status = onlineStatus(f);
+    const st = STATUS_MAP[status] || STATUS_MAP.offline;
+    const wr = f.wins + f.losses > 0 ? Math.round(f.wins / (f.wins + f.losses) * 100) + '%' : '—';
+    const bg = bgs[i % bgs.length];
     return `
       <div class="friend-card">
-        <div class="friend-avatar" style="background:${f.bg}">${f.initials}</div>
+        <div class="friend-avatar" style="background:${bg}">${f.initials || f.name.slice(0,2).toUpperCase()}</div>
         <div style="flex:1;min-width:0">
           <div class="friend-name">${f.name}</div>
           <div class="friend-status"><div class="status-dot" style="background:${st.color}"></div><span class="status-text">${st.text}</span></div>
         </div>
         <div class="friend-wr">
-          <div class="wr-number${f.status==='pending'?' pending':''}">${f.wr}</div>
+          <div class="wr-number">${wr}</div>
           <div class="wr-label">Win rate</div>
         </div>
       </div>`;
-  }).join('');
-  document.getElementById('friend-count').textContent = state.friends.length + ' added';
+  }).join('') || '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:20px;font-size:13px;">No friends added yet.<br>Search by @username or email above.</div>';
+  document.getElementById('friend-count').textContent = friends.length + ' added';
 }
 
 function addFriend() {
   const input = document.getElementById('friend-input');
-  const raw   = input.value.trim().replace(/^@/, '');
+  const raw   = input.value.trim().replace(/^@/, '').toLowerCase();
   if (!raw) return;
-  const name = raw.charAt(0).toUpperCase() + raw.slice(1);
-  const bgs  = ['linear-gradient(135deg,#00e676,#00c0c8)','linear-gradient(135deg,#ff6a3d,#ff2952)','linear-gradient(135deg,#7b5cff,#0050ff)'];
-  state.friends.unshift({ id:'f'+Date.now(), name, initials:name.slice(0,2).toUpperCase(), status:'pending', wr:'—', bg:bgs[state.friends.length%bgs.length] });
+  const accounts = getAccounts();
+  const meId = state.currentUser?.id;
+  const found = accounts.find(a => a.id !== meId && (a.username?.toLowerCase() === raw || a.email?.toLowerCase() === raw || a.email?.split('@')[0].toLowerCase() === raw));
+  if (!found) {
+    showFriendError('No user found with that username or email.');
+    return;
+  }
+  const ids = getFriendIds();
+  if (ids.includes(found.id)) { showFriendError('Already added.'); return; }
+  ids.unshift(found.id);
+  saveFriendIds(ids);
   input.value = '';
   renderFriends();
+}
+
+function showFriendError(msg) {
+  let el = document.getElementById('friend-error');
+  if (!el) { el = document.createElement('div'); el.id = 'friend-error'; el.style.cssText = 'color:#ff6a3d;font-size:11px;margin-top:4px;text-align:center'; document.getElementById('friend-input').parentNode.appendChild(el); }
+  el.textContent = msg;
+  setTimeout(() => { if (el) el.textContent = ''; }, 2500);
 }
 
 document.getElementById('friend-input').addEventListener('keydown', e => { if (e.key === 'Enter') addFriend(); });
@@ -2048,7 +2193,7 @@ function initBgAnim() {
     'KC -3.5 (-110)','SF +3.5 (-110)','O 45.5 (-110)','U 45.5 (-110)',
   ];
   const rows = document.getElementById('bg-rows');
-  for (let r = 0; r < 60; r++) {
+  for (let r = 0; r < 80; r++) {
     const row = document.createElement('div');
     row.className = 'bg-row ' + (r % 2 === 0 ? 'go-l' : 'go-r');
     row.style.animationDelay = -(r * 2.2) + 's';
