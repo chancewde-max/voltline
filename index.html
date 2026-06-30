@@ -285,8 +285,9 @@
   .deposit-card { position:relative; border-radius:12px; padding:14px 13px; cursor:pointer; border:1px solid rgba(255,255,255,.08); background:rgba(10,10,26,1); transition:border-color .15s,background .15s,box-shadow .15s; -webkit-tap-highlight-color:transparent; }
   .deposit-card.selected { background:rgba(0,240,245,.1); border-color:#00f0f5; box-shadow:0 0 18px rgba(0,240,245,.18); }
   .deposit-card.popular-dep::before { content:'POPULAR'; position:absolute; top:-8px; right:10px; padding:1px 7px; background:#00f0f5; border-radius:4px; font-family:'Space Mono',monospace; font-size:8px; font-weight:700; color:#03060a; letter-spacing:.06em; }
-  .dep-amount { font-family:'Space Mono',monospace; font-size:18px; font-weight:700; color:#eef2ff; margin-bottom:3px; }
-  .dep-bonus { font-family:'Space Mono',monospace; font-size:10px; color:#00e676; }
+  .dep-amount { font-family:'Space Mono',monospace; font-size:16px; font-weight:700; color:#eef2ff; margin-bottom:3px; }
+  .dep-gems { font-family:'Space Mono',monospace; font-size:10px; color:#00f0f5; margin-bottom:2px; }
+  .dep-bonus { font-family:'Space Mono',monospace; font-size:9px; color:#00e676; }
 
   /* CHECKOUT SCREEN */
   .checkout-header { display:flex; align-items:center; gap:14px; padding:14px 18px 12px; border-bottom:1px solid rgba(255,255,255,.07); flex-shrink:0; }
@@ -839,9 +840,10 @@
     </div>
     <div class="checkout-body">
       <div class="checkout-summary">
-        <div class="checkout-sum-label">Depositing</div>
+        <div class="checkout-sum-label">You Pay</div>
         <div class="checkout-sum-amount" id="co-amount">$0.00</div>
-        <div class="checkout-sum-bonus" id="co-bonus">+ $0.00 bonus promo cash</div>
+        <div class="checkout-sum-label" style="margin-top:10px">You Receive</div>
+        <div class="checkout-sum-bonus" id="co-bonus">— Gems + $0.00 promo cash</div>
       </div>
       <div class="checkout-form-title">Payment Details</div>
       <div class="checkout-field">
@@ -916,7 +918,7 @@
 const state = {
   screen: 'login', activeSport: 'NBA', showAll: false, allGames: [],
   wins: 142, losses: 89, promoCash: 3240.50, gems: 1250,
-  selectedPack: 'p2',
+  selectedPack: 'p4',
   betSlip: [],
   placedBets: [],
   currentUser: null,
@@ -934,10 +936,13 @@ const MOCK_USERS = [
 ];
 
 const PACKS = [
-  { id:'p1', amount:100,  bonus:10,  popular:false },
-  { id:'p2', amount:250,  bonus:25,  popular:true  },
-  { id:'p3', amount:500,  bonus:75,  popular:false },
-  { id:'p4', amount:1000, bonus:200, popular:false },
+  { id:'p1', price:1,   gems:100,   promo:1.00,  popular:false },
+  { id:'p2', price:5,   gems:500,   promo:5.50,  popular:false },
+  { id:'p3', price:10,  gems:1000,  promo:11.00, popular:false },
+  { id:'p4', price:25,  gems:2500,  promo:27.50, popular:true  },
+  { id:'p5', price:50,  gems:5000,  promo:55.00, popular:false },
+  { id:'p6', price:100, gems:10000, promo:110.00,popular:false },
+  { id:'p7', price:250, gems:25000, promo:275.00,popular:false },
 ];
 
 const STATUS_MAP = {
@@ -1871,8 +1876,9 @@ function renderPacks() {
     const sel = p.id === state.selectedPack;
     return `
       <div class="deposit-card${sel ? ' selected' : ''}${p.popular ? ' popular-dep' : ''}" onclick="selectPack('${p.id}')">
-        <div class="dep-amount">${money(p.amount)}</div>
-        <div class="dep-bonus">+${money(p.bonus)} bonus</div>
+        <div class="dep-amount">${money(p.price)}</div>
+        <div class="dep-gems">${p.gems.toLocaleString()} Gems</div>
+        <div class="dep-bonus">+${money(p.promo)} promo cash</div>
       </div>`;
   }).join('');
 }
@@ -1882,16 +1888,16 @@ function selectPack(id) { state.selectedPack = id; renderPacks(); updateBuyBtn()
 function updateBuyBtn() {
   const pack = PACKS.find(p => p.id === state.selectedPack);
   if (!pack) return;
-  document.getElementById('buy-label').textContent = `Deposit ${money(pack.amount)}`;
-  document.getElementById('buy-sub').textContent   = `+ ${money(pack.bonus)} bonus promo cash`;
+  document.getElementById('buy-label').textContent = `Buy for ${money(pack.price)}`;
+  document.getElementById('buy-sub').textContent   = `${pack.gems.toLocaleString()} Gems + ${money(pack.promo)} promo cash`;
 }
 
 function goCheckout() {
   const pack = PACKS.find(p => p.id === state.selectedPack);
   if (!pack) return;
   state.pendingDeposit = pack;
-  document.getElementById('co-amount').textContent = money(pack.amount);
-  document.getElementById('co-bonus').textContent  = `+ ${money(pack.bonus)} bonus promo cash`;
+  document.getElementById('co-amount').textContent = money(pack.price);
+  document.getElementById('co-bonus').textContent  = `${pack.gems.toLocaleString()} Gems + ${money(pack.promo)} promo cash`;
   // Pre-fill name from account
   const nameEl = document.getElementById('co-name');
   if (nameEl && state.currentUser) nameEl.value = state.currentUser.name || '';
@@ -1912,8 +1918,8 @@ function completePurchase() {
   errEl.textContent = '';
   const pack = state.pendingDeposit;
   if (!pack) return;
-  state.promoCash += pack.amount + pack.bonus;
-  state.gems      += Math.floor(pack.amount / 10);
+  state.promoCash += pack.promo;
+  state.gems      += pack.gems;
   // Persist to account
   if (state.currentUser) {
     const accounts = getAccounts();
@@ -1922,7 +1928,7 @@ function completePurchase() {
   }
   updateBalances();
   navigate('account');
-  showToast(`${money(pack.amount)} deposited · +${money(pack.bonus)} bonus added!`);
+  showToast(`${pack.gems.toLocaleString()} Gems + ${money(pack.promo)} promo cash added!`);
 }
 
 function fmtCard(el) {
