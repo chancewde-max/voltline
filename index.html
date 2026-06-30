@@ -720,16 +720,8 @@
         </div>
       </div>
 
-      <!-- Playthrough (only visible after purchase) -->
-      <div class="playthrough-box" id="playthrough-box" style="display:none">
-        <div class="pt-title">PLAYTHROUGH PROGRESS</div>
-        <div class="pt-row">
-          <span class="pt-label">Wagered</span>
-          <span class="pt-val"><span id="pt-wagered">$0.00</span> / <span id="pt-required">$0.00</span></span>
-        </div>
-        <div class="pt-bar-bg"><div class="pt-bar-fill" id="pt-bar" style="width:0%"></div></div>
-        <div class="pt-note">Wager your purchased promo cash 1× to unlock redemption</div>
-      </div>
+      <!-- Per-purchase playthrough trackers -->
+      <div id="playthrough-batches"></div>
       <button class="redeem-btn" id="redeem-btn" onclick="openRedeemModal()">REDEEM CASH</button>
 
       <!-- Add Funds -->
@@ -773,7 +765,10 @@
   <div class="screen hidden-right" id="screen-bets">
     <div class="home-header">
       <span class="brand">VOLT<span>LINE</span></span>
-      <span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:600;color:#4a5a7a;letter-spacing:.08em">MY BETS</span>
+      <span id="bets-view-label" style="font-family:'Space Mono',monospace;font-size:13px;font-weight:600;color:#4a5a7a;letter-spacing:.08em">MY BETS</span>
+      <button id="bets-history-btn" onclick="toggleBetsView()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:#4a5a7a">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4.5 11a6.5 6.5 0 1 1 2.2 4.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.5 15.5V11H9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
     <div class="scroll-area" id="bets-list-area" style="padding-top:12px"></div>
     <div class="ticker-bar">
@@ -1028,7 +1023,8 @@ const state = {
   placedBets: [],
   currentUser: null,
   friends: [],
-  playthroughNeeded: 0,
+  playthroughBatches: [],
+  betsView: 'active',
   min: 2, sec: 34
 };
 
@@ -1314,28 +1310,29 @@ function updateBalances() {
   // Promo cash / gems display
   const prEl = document.getElementById('promo-cash'); if (prEl) prEl.textContent = money(state.promoCash);
   const gmEl = document.getElementById('gems-count'); if (gmEl) gmEl.textContent = state.gems.toLocaleString();
-  // Playthrough tracker — only shown after a real purchase (totalPlaythroughRequired > 0)
-  const pt = state.playthroughNeeded || 0;
-  const totalReq = state.currentUser?.totalPlaythroughRequired || 0;
-  const ptBox = document.getElementById('playthrough-box');
+  // Per-batch playthrough trackers
+  const batchesEl = document.getElementById('playthrough-batches');
   const redeemBtn = document.getElementById('redeem-btn');
-  const ptWagered = document.getElementById('pt-wagered');
-  const ptRequired = document.getElementById('pt-required');
-  const ptBar = document.getElementById('pt-bar');
-  if (ptBox) {
-    if (totalReq > 0 && state.promoCash > 0) {
-      ptBox.style.display = 'block';
-      const wagered = Math.max(0, totalReq - pt);
-      const fillPct = Math.min(100, Math.round((wagered / totalReq) * 100));
-      if (ptWagered) ptWagered.textContent = money(wagered);
-      if (ptRequired) ptRequired.textContent = money(totalReq);
-      if (ptBar) ptBar.style.width = fillPct + '%';
+  const batches = state.playthroughBatches || [];
+  if (batchesEl) {
+    if (batches.length === 0) {
+      batchesEl.innerHTML = '';
     } else {
-      ptBox.style.display = 'none';
+      batchesEl.innerHTML = batches.map(b => {
+        const wagered = Math.max(0, b.total - b.remaining);
+        const pct = Math.min(100, Math.round((wagered / b.total) * 100));
+        return `<div class="playthrough-box" style="margin:0 18px 10px">
+          <div class="pt-title">PLAYTHROUGH — ${b.label}</div>
+          <div class="pt-row"><span class="pt-label">Wagered</span><span class="pt-val">${money(wagered)} / ${money(b.total)}</span></div>
+          <div class="pt-bar-bg"><div class="pt-bar-fill" style="width:${pct}%"></div></div>
+          <div class="pt-note">Wager ${money(b.remaining)} more to unlock this batch</div>
+        </div>`;
+      }).join('');
     }
   }
+  const allDone = batches.length === 0 && (state.currentUser?.totalPlaythroughRequired || 0) > 0 && state.promoCash > 0;
   if (redeemBtn) {
-    redeemBtn.className = 'redeem-btn' + (pt <= 0 && totalReq > 0 && state.promoCash > 0 ? ' active' : '');
+    redeemBtn.className = 'redeem-btn' + (allDone ? ' active' : '');
   }
 }
 
@@ -1559,20 +1556,20 @@ function gameCardHTML(game, sport, featured, reason) {
             ${t.score != null ? `<div class="gc-tname-sub">${t.score}</div>` : ''}
           </div>
         </div>
-        <div class="gc-bet-cell${selSpr?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spr.odds}','${sp}','spr','${spr.line}')">
+        <div class="gc-bet-cell${selSpr?' sel':''}" onclick="event.stopPropagation();toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spr.odds}','${sp}','spr','${spr.line}')">
           <div class="gc-bet-main">${spr.line}</div><div class="gc-bet-odds">${spr.odds}</div>
         </div>
-        <div class="gc-bet-cell${selML?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${ml}','${sp}','ml','')">
+        <div class="gc-bet-cell${selML?' sel':''}" onclick="event.stopPropagation();toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${ml}','${sp}','ml','')">
           <div class="gc-bet-main">${ml}</div><div class="gc-bet-odds">ML</div>
         </div>
-        <div class="gc-bet-cell${selOU?' sel':''}" onclick="toggleBet('${game.id}','${ouSide}','','${ouOdds}','${sp}','ou','${tot.line}')">
+        <div class="gc-bet-cell${selOU?' sel':''}" onclick="event.stopPropagation();toggleBet('${game.id}','${ouSide}','','${ouOdds}','${sp}','ou','${tot.line}')">
           <div class="gc-bet-main">${ouSide==='over'?'O':'U'} ${tot.line}</div><div class="gc-bet-odds">${ouOdds}</div>
         </div>
       </div>`;
   }).join('');
 
   return `
-    <div class="game-card${featured?' featured':''}${inSlip?' in-slip':''}${locked?' card-locked':''}" id="card-${game.id}">
+    <div class="game-card${featured?' featured':''}${inSlip?' in-slip':''}${locked?' card-locked':''}" id="card-${game.id}" onclick="openGame('${game.id}')" style="cursor:pointer">
       ${reason ? `<div class="reason">${reason}</div>` : ''}
       <div class="gc-head">
         <div>
@@ -1940,8 +1937,14 @@ function placeSlip() {
   state.placedBets.push(bet);
 
   state.promoCash = Math.max(0, state.promoCash - stakeNum);
-  // Reduce playthrough requirement by amount wagered
-  state.playthroughNeeded = Math.max(0, (state.playthroughNeeded || 0) - stakeNum);
+  // Deduct from oldest batch first (FIFO)
+  let toDeduct = stakeNum;
+  state.playthroughBatches = (state.playthroughBatches || []).map(b => {
+    if (toDeduct <= 0) return b;
+    const d = Math.min(b.remaining, toDeduct);
+    toDeduct -= d;
+    return { ...b, remaining: Math.max(0, b.remaining - d) };
+  }).filter(b => b.remaining > 0.001);
   // Persist updated balance back to user account in localStorage
   if (state.currentUser) {
     const accounts = getAccounts();
@@ -1949,7 +1952,7 @@ function placeSlip() {
     if (idx >= 0) {
       accounts[idx].balance = state.promoCash;
       accounts[idx].bets = (accounts[idx].bets || 0) + 1;
-      accounts[idx].playthroughNeeded = state.playthroughNeeded;
+      accounts[idx].playthroughBatches = state.playthroughBatches;
       saveAccounts(accounts);
       state.currentUser = accounts[idx];
     }
@@ -1965,18 +1968,31 @@ function placeSlip() {
   refreshActiveBoard();
 }
 
+function toggleBetsView() {
+  state.betsView = state.betsView === 'active' ? 'history' : 'active';
+  const btn = document.getElementById('bets-history-btn');
+  const lbl = document.getElementById('bets-view-label');
+  if (btn) btn.style.color = state.betsView === 'history' ? '#00f0f5' : '#4a5a7a';
+  if (lbl) lbl.textContent = state.betsView === 'history' ? 'PRIOR BETS' : 'MY BETS';
+  renderBets();
+}
+
 function renderBets() {
   const area = document.getElementById('bets-list-area');
   if (!area) return;
-  if (state.placedBets.length === 0) {
+  const isHistory = state.betsView === 'history';
+  const filtered = state.placedBets.filter(b => isHistory ? b.status !== 'pending' : b.status === 'pending');
+  const emptyMsg = isHistory ? 'No settled bets yet' : 'No active bets';
+  const emptySubMsg = isHistory ? 'Settled bets appear here after games end.' : 'Place your first bet on the Home tab.';
+  if (filtered.length === 0) {
     area.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px;text-align:center">
-      <div style="font-size:48px;margin-bottom:16px">🎯</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#eef2ff;margin-bottom:8px">No bets yet</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:#4a5a7a;line-height:1.5">Place your first bet on the Home tab to see it here.</div>
+      <div style="font-size:48px;margin-bottom:16px">${isHistory ? '📋' : '🎯'}</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#eef2ff;margin-bottom:8px">${emptyMsg}</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:#4a5a7a;line-height:1.5">${emptySubMsg}</div>
     </div>`;
     return;
   }
-  const list = [...state.placedBets].reverse();
+  const list = [...filtered].reverse();
   area.innerHTML = list.map(bet => {
     const isParlay = bet.legs.length >= 2;
     const d = new Date(bet.placedAt);
@@ -1990,15 +2006,16 @@ function renderBets() {
     const typeLabel   = isParlay ? `PARLAY · ${bet.legs.length} LEGS` : 'STRAIGHT';
     const legsHtml = bet.legs.map(leg => {
       const oc = parseInt(leg.odds) > 0 ? '#00e676' : '#ff2952';
+      const mktLabel = leg.market === 'spr' ? `${leg.teamAbbr} Spread ${leg.line||''}` : leg.market === 'ou' ? `${leg.teamAbbr === 'over' ? 'OVER' : 'UNDER'} ${leg.line||''}` : `${leg.teamAbbr} Moneyline`;
       return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div>
-          <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#eef2ff">${leg.teamAbbr} Moneyline</div>
-          <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#4a5a7a;margin-top:2px">${leg.sport} · vs ${leg.opponent}</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#eef2ff">${mktLabel}</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#4a5a7a;margin-top:2px">${leg.sport || ''}${leg.opponent ? ' · vs '+leg.opponent : ''}</div>
         </div>
         <div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:${oc}">${leg.odds}</div>
       </div>`;
     }).join('');
-    return `<div style="background:rgba(10,10,26,1);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px;margin-bottom:12px">
+    return `<div style="background:rgba(10,10,26,1);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px;margin:0 14px 12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px">
           <div style="background:${badgeBg};border:1px solid ${badgeBdr};border-radius:5px;padding:2px 7px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:${oddsColor}">${typeLabel}</div>
@@ -2011,7 +2028,7 @@ function renderBets() {
       <div style="height:1px;background:rgba(255,255,255,.07);margin:10px 0"></div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div><div style="font-family:'Space Grotesk',sans-serif;font-size:10px;color:#4a5a7a;margin-bottom:2px">Stake</div><div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:#eef2ff">${money(bet.stake)}</div></div>
-        <div style="text-align:center"><div style="font-family:'Space Grotesk',sans-serif;font-size:10px;color:#4a5a7a;margin-bottom:2px">To Win</div><div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:#00e676">${money(bet.payout)}</div></div>
+        <div style="text-align:center"><div style="font-family:'Space Grotesk',sans-serif;font-size:10px;color:#4a5a7a;margin-bottom:2px">To Win</div><div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:#00e676">${money(bet.toWin)}</div></div>
         <div style="text-align:right"><div style="font-family:'Space Grotesk',sans-serif;font-size:10px;color:#4a5a7a;margin-bottom:2px">${dateStr}</div><div style="font-family:'Space Mono',monospace;font-size:12px;color:#b0bcd8">${timeStr}</div></div>
       </div>
     </div>`;
@@ -2179,7 +2196,8 @@ function completePurchase() {
   if (!pack) return;
   state.promoCash += pack.promo;
   state.gems      += pack.gems;
-  state.playthroughNeeded = (state.playthroughNeeded || 0) + pack.promo;
+  const newBatch = { id: 'pt_' + Date.now(), label: pack.name, total: pack.promo, remaining: pack.promo };
+  state.playthroughBatches = [...(state.playthroughBatches || []), newBatch];
   // Persist to account
   if (state.currentUser) {
     const accounts = getAccounts();
@@ -2187,7 +2205,7 @@ function completePurchase() {
     if (idx >= 0) {
       accounts[idx].balance = state.promoCash;
       accounts[idx].gems = state.gems;
-      accounts[idx].playthroughNeeded = state.playthroughNeeded;
+      accounts[idx].playthroughBatches = state.playthroughBatches;
       accounts[idx].totalPlaythroughRequired = (accounts[idx].totalPlaythroughRequired || 0) + pack.promo;
       saveAccounts(accounts);
       state.currentUser = accounts[idx];
@@ -2421,7 +2439,8 @@ function checkDailyReward(user) {
   state.gems      += gemsEarned;
   state.promoCash += cashEarned;
   if (cashEarned > 0) {
-    state.playthroughNeeded = (state.playthroughNeeded || 0) + cashEarned;
+    const loginBatch = { id: 'pt_' + Date.now(), label: 'Login Bonus', total: cashEarned, remaining: cashEarned };
+    state.playthroughBatches = [...(state.playthroughBatches || []), loginBatch];
     user.totalPlaythroughRequired = (user.totalPlaythroughRequired || 0) + cashEarned;
   }
 
@@ -2429,7 +2448,7 @@ function checkDailyReward(user) {
   user.balance           = state.promoCash;
   user.loginStreak       = streak;
   user.lastLoginDate     = today;
-  user.playthroughNeeded = state.playthroughNeeded || 0;
+  user.playthroughBatches = state.playthroughBatches || [];
   state.currentUser      = user;
 
   const accounts = getAccounts();
@@ -2482,13 +2501,13 @@ function closeRedeemModal() {
 function confirmRedeem() {
   const amount = state.promoCash;
   state.promoCash = 0;
-  state.playthroughNeeded = 0;
+  state.playthroughBatches = [];
   if (state.currentUser) {
     const accounts = getAccounts();
     const idx = accounts.findIndex(a => a.id === state.currentUser.id);
     if (idx >= 0) {
       accounts[idx].balance = 0;
-      accounts[idx].playthroughNeeded = 0;
+      accounts[idx].playthroughBatches = [];
       saveAccounts(accounts);
       state.currentUser = accounts[idx];
     }
@@ -2508,11 +2527,18 @@ function initMainApp() {
   const user = state.currentUser;
   if (user) {
     // Load user's balance and stats into live state
-    state.promoCash                   = user.balance                   ?? 1000;
-    state.gems                        = user.gems                        ?? 0;
-    state.playthroughNeeded           = user.playthroughNeeded           ?? 0;
-    state.wins                        = user.wins                        ?? 0;
-    state.losses                      = user.losses                      ?? 0;
+    state.promoCash  = user.balance  ?? 1000;
+    state.gems       = user.gems     ?? 0;
+    state.wins       = user.wins     ?? 0;
+    state.losses     = user.losses   ?? 0;
+    // Load playthrough batches (migrate legacy single-tracker if needed)
+    if (user.playthroughBatches) {
+      state.playthroughBatches = user.playthroughBatches;
+    } else if ((user.playthroughNeeded || 0) > 0) {
+      state.playthroughBatches = [{ id: 'pt_legacy', label: 'Previous Deposit', total: user.totalPlaythroughRequired || user.playthroughNeeded, remaining: user.playthroughNeeded }];
+    } else {
+      state.playthroughBatches = [];
+    }
     state.placedBets = [];  // fresh session; history tied to account
     document.getElementById('home-avatar').textContent = user.initials;
     document.getElementById('live-avatar').textContent = user.initials;
