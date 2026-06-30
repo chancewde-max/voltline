@@ -34,6 +34,10 @@
   @keyframes slide-in   { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
   @keyframes sheet-up   { from{transform:translateY(100%)} to{transform:translateY(0)} }
   @keyframes spin       { to{transform:rotate(360deg)} }
+  @keyframes odds-go-l  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  @keyframes odds-go-r  { from{transform:translateX(-50%)} to{transform:translateX(0)} }
+  @keyframes money-fall { 0%{transform:translateY(-40px);opacity:0} 8%{opacity:.8} 88%{opacity:.5} 100%{transform:translateY(820px);opacity:0} }
+  @keyframes auth-in    { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
   /* HOME */
   .home-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 18px 12px; flex-shrink: 0; }
@@ -99,7 +103,7 @@
 
   /* ticker — always at bottom: 74px (above nav), never moves */
   .ticker-bar { position: absolute; left: 0; right: 0; bottom: 74px; height: 27px; background: rgba(0,0,8,.97); border-top: 1px solid rgba(0,240,245,.2); overflow: hidden; display: flex; align-items: center; z-index: 4; }
-  .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 14s linear infinite; }
+  .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 28s linear infinite; }
   .ticker-item { font-family: 'Space Mono', monospace; font-size: 9px; padding: 0 16px; }
   .ticker-item.hot { color: #00f0f5; }
   .ticker-item.dim { color: #4a5a7a; }
@@ -272,21 +276,164 @@
   .gd-prop-btn.sel .gd-prop-btn-odds { color: #00f0f5; }
   .card-clickable-header { cursor: pointer; }
   .card-clickable-header:hover .game-sport { color: #00c0c8; }
+
+  /* BG ANIMATION */
+  #bg-anim { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .bg-rows { position:absolute; top:-20%; left:-25%; right:-25%; bottom:-20%; transform:rotate(-10deg); display:flex; flex-direction:column; gap:0; }
+  .bg-row { white-space:nowrap; padding:9px 0; font-family:'Space Mono',monospace; font-size:10px; color:rgba(0,240,245,0.07); letter-spacing:.04em; }
+  .bg-row.go-l { animation:odds-go-l 22s linear infinite; }
+  .bg-row.go-r { animation:odds-go-r 26s linear infinite; }
+  .money-layer { position:absolute; inset:0; }
+  .money-drop { position:absolute; top:-40px; color:rgba(0,230,118,0.55); font-family:'Space Mono',monospace; font-weight:700; animation:money-fall linear infinite; user-select:none; }
+
+  /* AUTH SCREENS */
+  .screen.auth-bg { background:rgba(3,3,16,0.82) !important; }
+  .auth-content { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 28px; animation:auth-in .5s ease-out both; }
+  .auth-logo { font-family:'Rajdhani',sans-serif; font-size:46px; font-weight:700; letter-spacing:2px; color:#eef2ff; margin-bottom:6px; text-align:center; }
+  .auth-logo span { color:#00f0f5; }
+  .auth-tagline { font-family:'Space Mono',monospace; font-size:10px; color:#4a5a7a; letter-spacing:2px; text-transform:uppercase; margin-bottom:36px; text-align:center; }
+  .auth-field { width:100%; margin-bottom:11px; }
+  .auth-label { font-family:'Space Grotesk',sans-serif; font-size:10px; font-weight:600; color:#4a5a7a; text-transform:uppercase; letter-spacing:1px; margin-bottom:5px; }
+  .auth-input { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:13px 16px; font-family:'Space Grotesk',sans-serif; font-size:15px; color:#eef2ff; outline:none; transition:border-color .15s; box-sizing:border-box; }
+  .auth-input::placeholder { color:#2a3a5a; }
+  .auth-input:focus { border-color:rgba(0,240,245,.4); background:rgba(0,240,245,.03); }
+  .auth-btn { width:100%; padding:14px; background:linear-gradient(90deg,#00c0c8,#0050ff); border-radius:13px; text-align:center; font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; letter-spacing:.08em; color:white; cursor:pointer; margin-top:6px; transition:opacity .15s; box-shadow:0 4px 22px rgba(0,80,255,.3); }
+  .auth-btn:active { opacity:.85; }
+  .auth-error { color:#ff2952; font-family:'Space Mono',monospace; font-size:10px; text-align:center; margin-bottom:8px; min-height:16px; }
+  .auth-switch { margin-top:18px; font-family:'Space Grotesk',sans-serif; font-size:13px; color:#4a5a7a; text-align:center; }
+  .auth-switch span { color:#00f0f5; cursor:pointer; font-weight:600; }
+  .admin-link { margin-top:24px; font-family:'Space Mono',monospace; font-size:9px; color:#1a2a3a; text-align:center; cursor:pointer; letter-spacing:1px; }
+  .admin-link:hover { color:#3d4e6e; }
+
+  /* BALANCE HEADER */
+  .bal-group { display:flex; align-items:center; gap:10px; }
+  .bal-item { text-align:right; }
+  .bal-item-label { font-size:8px; color:#3d4e6e; text-transform:uppercase; letter-spacing:.08em; }
+  .bal-item-amt { font-family:'Space Mono',monospace; font-size:12px; font-weight:700; }
+  .bal-item-amt.cyan { color:#00f0f5; text-shadow:0 0 12px rgba(0,240,245,.4); }
+  .bal-item-amt.amber { color:#ffb02e; }
+  .bal-divider { width:1px; height:26px; background:rgba(255,255,255,.08); }
+
+  /* ADMIN SCREEN */
+  .admin-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 12px; border-bottom:1px solid rgba(255,41,82,.15); flex-shrink:0; }
+  .admin-title { font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700; letter-spacing:.12em; color:#ff2952; text-transform:uppercase; }
+  .admin-back { font-family:'Space Mono',monospace; font-size:11px; color:#4a5a7a; cursor:pointer; }
+  .admin-scroll { flex:1; overflow-y:auto; padding:0 18px 100px; }
+  .admin-section-title { font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:1.5px; color:#4a5a7a; text-transform:uppercase; padding:16px 0 8px; }
+  .admin-user-card { display:flex; align-items:center; gap:12px; padding:11px 14px; background:rgba(10,10,26,1); border:1px solid rgba(255,255,255,.07); border-radius:11px; margin-bottom:8px; }
+  .admin-av { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; color:white; flex-shrink:0; }
+  .admin-user-name { font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; color:#eef2ff; }
+  .admin-user-meta { font-family:'Space Mono',monospace; font-size:9px; color:#3d4e6e; margin-top:2px; }
+  .admin-user-bal { font-family:'Space Mono',monospace; font-size:12px; font-weight:700; color:#00f0f5; text-align:right; }
+  .admin-bet-row { padding:10px 14px; background:rgba(10,10,26,1); border:1px solid rgba(255,255,255,.06); border-radius:10px; margin-bottom:7px; }
+  .admin-bet-id { font-family:'Space Mono',monospace; font-size:9px; color:#3d4e6e; margin-bottom:4px; }
+  .admin-bet-legs { font-family:'Space Grotesk',sans-serif; font-size:12px; color:#c0cae0; margin-bottom:3px; }
+  .admin-bet-meta { display:flex; align-items:center; justify-content:space-between; }
+  .admin-bet-stake { font-family:'Space Mono',monospace; font-size:11px; color:#4a5a7a; }
+  .admin-bet-status { font-family:'Space Mono',monospace; font-size:10px; font-weight:700; }
+  .admin-bet-status.win { color:#00e676; }
+  .admin-bet-status.loss { color:#ff2952; }
+  .admin-bet-status.pending { color:#ffb02e; }
+  .admin-stats-row { display:flex; gap:8px; margin-bottom:14px; }
+  .admin-stat { flex:1; padding:12px 10px; background:rgba(10,10,26,1); border:1px solid rgba(255,255,255,.07); border-radius:10px; text-align:center; }
+  .admin-stat-num { font-family:'Space Mono',monospace; font-size:18px; font-weight:700; color:#00f0f5; }
+  .admin-stat-label { font-size:9px; color:#3d4e6e; text-transform:uppercase; letter-spacing:.08em; margin-top:2px; }
 </style>
 </head>
 <body>
 <div id="app">
 
+  <!-- BACKGROUND ANIMATION -->
+  <div id="bg-anim">
+    <div class="bg-rows" id="bg-rows"></div>
+    <div class="money-layer" id="money-layer"></div>
+  </div>
+
+  <!-- LOGIN SCREEN -->
+  <div class="screen auth-bg" id="screen-login" style="position:relative;z-index:1;">
+    <div class="auth-content">
+      <div class="auth-logo">VOLT<span>LINE</span></div>
+      <div class="auth-tagline">Beat the odds</div>
+      <div id="login-error" class="auth-error"></div>
+      <div class="auth-field">
+        <div class="auth-label">Email or Username</div>
+        <input class="auth-input" id="login-user" type="text" placeholder="you@example.com" autocomplete="username">
+      </div>
+      <div class="auth-field">
+        <div class="auth-label">Password</div>
+        <input class="auth-input" id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="auth-btn" onclick="doLogin()">SIGN IN</div>
+      <div class="auth-switch">Don't have an account? <span onclick="navigate('signup')">Sign up</span></div>
+      <div class="admin-link" onclick="adminAccess()">⬡ ADMIN ACCESS</div>
+    </div>
+  </div>
+
+  <!-- SIGNUP SCREEN -->
+  <div class="screen hidden-right auth-bg" id="screen-signup" style="position:relative;z-index:1;">
+    <div class="auth-content">
+      <div class="auth-logo">VOLT<span>LINE</span></div>
+      <div class="auth-tagline">Create your account</div>
+      <div id="signup-error" class="auth-error"></div>
+      <div class="auth-field">
+        <div class="auth-label">Full Name</div>
+        <input class="auth-input" id="signup-name" type="text" placeholder="Jordan Diaz">
+      </div>
+      <div class="auth-field">
+        <div class="auth-label">Email</div>
+        <input class="auth-input" id="signup-email" type="email" placeholder="you@example.com">
+      </div>
+      <div class="auth-field">
+        <div class="auth-label">Password</div>
+        <input class="auth-input" id="signup-pass" type="password" placeholder="Min 6 characters">
+      </div>
+      <div class="auth-btn" onclick="doSignup()">CREATE ACCOUNT</div>
+      <div class="auth-switch">Already have an account? <span onclick="navigate('login')">Sign in</span></div>
+    </div>
+  </div>
+
+  <!-- ADMIN SCREEN -->
+  <div class="screen hidden-right" id="screen-admin">
+    <div class="admin-header">
+      <span class="admin-title">⬡ Admin Panel</span>
+      <span class="admin-back" onclick="navigate('login')">← Exit</span>
+    </div>
+    <div class="admin-scroll">
+      <div class="admin-stats-row">
+        <div class="admin-stat"><div class="admin-stat-num" id="adm-total-users">5</div><div class="admin-stat-label">Users</div></div>
+        <div class="admin-stat"><div class="admin-stat-num" id="adm-total-bets">0</div><div class="admin-stat-label">Total Bets</div></div>
+        <div class="admin-stat"><div class="admin-stat-num" id="adm-total-vol">$0</div><div class="admin-stat-label">Volume</div></div>
+      </div>
+      <div class="admin-section-title">All Accounts</div>
+      <div id="admin-users-list"></div>
+      <div class="admin-section-title">Bet History</div>
+      <div id="admin-bets-list"></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('login')">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3l7 7M5 8.5v8.5h4v-5h2v5h4V8.5" stroke="#3d4e6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label">← Login</span>
+      </div>
+    </div>
+  </div>
+
   <!-- FOR YOU (HOME) SCREEN -->
-  <div class="screen" id="screen-home">
+  <div class="screen hidden-right" id="screen-home">
     <div class="home-header">
       <span class="brand">VOLT<span>LINE</span></span>
       <div class="header-right">
-        <div>
-          <div class="balance-label">Balance</div>
-          <div class="balance-amount" id="foryou-balance">$0.00</div>
+        <div class="bal-group">
+          <div class="bal-item">
+            <div class="bal-item-label">Balance</div>
+            <div class="bal-item-amt cyan" id="foryou-balance">$0.00</div>
+          </div>
+          <div class="bal-divider"></div>
+          <div class="bal-item">
+            <div class="bal-item-label">In Slips</div>
+            <div class="bal-item-amt amber" id="foryou-in-slips">$0.00</div>
+          </div>
         </div>
-        <div class="avatar" onclick="navigate('account')">JD</div>
+        <div class="avatar" onclick="navigate('account')" id="home-avatar">JD</div>
       </div>
     </div>
 
@@ -370,11 +517,18 @@
     <div class="home-header">
       <span class="brand">VOLT<span>LINE</span></span>
       <div class="header-right">
-        <div>
-          <div class="balance-label">Balance</div>
-          <div class="balance-amount" id="home-balance">$0.00</div>
+        <div class="bal-group">
+          <div class="bal-item">
+            <div class="bal-item-label">Balance</div>
+            <div class="bal-item-amt cyan" id="home-balance">$0.00</div>
+          </div>
+          <div class="bal-divider"></div>
+          <div class="bal-item">
+            <div class="bal-item-label">In Slips</div>
+            <div class="bal-item-amt amber" id="live-in-slips">$0.00</div>
+          </div>
         </div>
-        <div class="avatar" onclick="navigate('account')">JD</div>
+        <div class="avatar" onclick="navigate('account')" id="live-avatar">JD</div>
       </div>
     </div>
     <div class="sport-tabs" id="sport-tabs">
@@ -691,11 +845,12 @@
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
-  screen: 'home', activeSport: 'NBA', showAll: false, allGames: [],
+  screen: 'login', activeSport: 'NBA', showAll: false, allGames: [],
   wins: 142, losses: 89, promoCash: 3240.50, gems: 1250,
   selectedPack: 'p2',
   betSlip: [],
   placedBets: [],
+  currentUser: null,
   friends: [
     { id:'f1', name:'Marcus Tan',  initials:'MT', status:'online',  wr:'68%', bg:'linear-gradient(135deg,#ff6a3d,#ff2952)' },
     { id:'f2', name:'Sara Klein',  initials:'SK', status:'betting', wr:'54%', bg:'linear-gradient(135deg,#00c0c8,#0050ff)' },
@@ -703,6 +858,15 @@ const state = {
   ],
   min: 2, sec: 34
 };
+
+// Mock users for admin panel (in real app this would be backend)
+const MOCK_USERS = [
+  { id:'u1', name:'Jordan Diaz',   initials:'JD', email:'jordan@voltline.bet', balance:3240.50, bets:231, wins:142, losses:89, joined:'Jan 2026', bg:'linear-gradient(135deg,#00c0c8,#0050ff)' },
+  { id:'u2', name:'Marcus Tan',    initials:'MT', email:'marcus@voltline.bet', balance:1890.00, bets:145, wins:98,  losses:47, joined:'Feb 2026', bg:'linear-gradient(135deg,#ff6a3d,#ff2952)' },
+  { id:'u3', name:'Sara Klein',    initials:'SK', email:'sara@voltline.bet',   balance:5120.75, bets:389, wins:241, losses:148,joined:'Nov 2025', bg:'linear-gradient(135deg,#00c0c8,#0050ff)' },
+  { id:'u4', name:'Devin Royce',   initials:'DR', email:'devin@voltline.bet',  balance:780.25,  bets:67,  wins:42,  losses:25, joined:'Mar 2026', bg:'linear-gradient(135deg,#7b5cff,#0050ff)' },
+  { id:'u5', name:'Priya Nair',    initials:'PN', email:'priya@voltline.bet',  balance:2650.00, bets:198, wins:121, losses:77, joined:'Dec 2025', bg:'linear-gradient(135deg,#00e676,#00c0c8)' },
+];
 
 const PACKS = [
   { id:'p1', gems:100,  price:4.99,  popular:false },
@@ -897,7 +1061,7 @@ function parseESPN(data, sport) {
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-const SCREEN_ORDER = ['home', 'live', 'casino', 'bets', 'account'];
+const SCREEN_ORDER = ['login', 'signup', 'admin', 'home', 'live', 'casino', 'bets', 'account'];
 function navigate(screen) {
   const from = document.getElementById('screen-' + state.screen);
   const to   = document.getElementById('screen-' + screen);
@@ -912,6 +1076,7 @@ function navigate(screen) {
   if (screen === 'home')    renderForYou();
   if (screen === 'account') renderAccount();
   if (screen === 'bets')    renderBets();
+  if (screen === 'admin')   renderAdmin();
   if (screen === 'live')    { state.showAll = false; updateSeeAll(); }
   updateSlipBar();
 }
@@ -923,6 +1088,17 @@ function updateBalances() {
   const v = money(state.promoCash);
   const a = document.getElementById('home-balance');   if (a) a.textContent = v;
   const b = document.getElementById('foryou-balance'); if (b) b.textContent = v;
+  // Update "in slips" total (sum of stakes for open slip)
+  const slipTotal = state.betSlip.length * 10; // placeholder; real stake from input
+  const stakeVal = parseFloat(document.getElementById('stake-input')?.value) || 0;
+  const inSlips = stakeVal > 0 ? money(stakeVal) : (state.betSlip.length > 0 ? `${state.betSlip.length} pick${state.betSlip.length !== 1 ? 's' : ''}` : '$0.00');
+  const inSlipsAmt = stakeVal > 0 ? money(stakeVal) : '$0.00';
+  const c = document.getElementById('foryou-in-slips'); if (c) c.textContent = inSlipsAmt;
+  const d = document.getElementById('live-in-slips');   if (d) d.textContent = inSlipsAmt;
+  // Avatar initials from current user
+  const initials = state.currentUser ? state.currentUser.initials : 'JD';
+  const av1 = document.getElementById('home-avatar'); if (av1) av1.textContent = initials;
+  const av2 = document.getElementById('live-avatar'); if (av2) av2.textContent = initials;
 }
 
 function updatePromoDots() {
@@ -1051,12 +1227,21 @@ async function fetchGames(sport) {
   container.innerHTML = '<div class="games-loading"><div class="spinner"></div> Loading...</div>';
   document.getElementById('live-count').textContent = '';
 
-  const url = ESPN_URLS[sport];
+  const baseUrl = ESPN_URLS[sport];
   let games = [];
   try {
-    if (url) {
+    if (baseUrl) {
+      // Append today's date so ESPN always returns today's games
+      const now = new Date();
+      const dateStr = now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate());
+      const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'dates=' + dateStr;
       const data = await fetch(url).then(r => r.json());
       games = parseESPN(data, sport);
+      // If no games today, try without date param (catches live scoreboard)
+      if (games.length === 0) {
+        const data2 = await fetch(baseUrl).then(r => r.json());
+        games = parseESPN(data2, sport);
+      }
     }
     if (games.length === 0) games = FALLBACK_GAMES[sport] || [];
   } catch {
@@ -1395,6 +1580,10 @@ function updatePayout() {
   const stakeNum = parseFloat(stakeEl.value) || 0;
   const payout   = calcPayout(stakeNum, state.betSlip);
   const canPlace  = stakeNum > 0 && stakeNum <= state.promoCash;
+  // Update "in slips" balance display
+  const inSlipsAmt = stakeNum > 0 ? money(stakeNum) : '$0.00';
+  const c = document.getElementById('foryou-in-slips'); if (c) c.textContent = inSlipsAmt;
+  const d = document.getElementById('live-in-slips');   if (d) d.textContent = inSlipsAmt;
 
   if (stakeNum > 0) {
     payoutEl.textContent = money(payout);
@@ -1696,12 +1885,147 @@ function renderAccount() {
   renderPacks(); updateBuyBtn(); renderFriends();
 }
 
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+const ACCOUNTS_KEY = 'vl_accounts';
+function getAccounts() {
+  try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]'); } catch { return []; }
+}
+function saveAccounts(arr) { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(arr)); }
+
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!user || !pass) { errEl.textContent = 'Please fill in all fields.'; return; }
+  const accounts = getAccounts();
+  const found = accounts.find(a => (a.email === user || a.username === user) && a.password === pass);
+  if (!found) { errEl.textContent = 'Invalid credentials. Try again.'; return; }
+  state.currentUser = found;
+  initMainApp();
+  navigate('home');
+}
+
+function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  const errEl = document.getElementById('signup-error');
+  errEl.textContent = '';
+  if (!name || !email || !pass) { errEl.textContent = 'Please fill in all fields.'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  const accounts = getAccounts();
+  if (accounts.find(a => a.email === email)) { errEl.textContent = 'Email already registered.'; return; }
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  const newUser = { id:'u'+Date.now(), name, initials, email, username:email.split('@')[0], password:pass, balance:1000, bets:0, wins:0, losses:0, joined:new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}) };
+  accounts.push(newUser);
+  saveAccounts(accounts);
+  state.currentUser = newUser;
+  state.promoCash = 1000; // welcome bonus
+  initMainApp();
+  navigate('home');
+}
+
+function adminAccess() {
+  const pw = prompt('Admin password:');
+  if (pw !== 'voltline2026') { alert('Access denied.'); return; }
+  navigate('admin');
+}
+
+function initMainApp() {
+  updateBalances();
+  renderPacks();
+  renderFriends();
+  fetchGames('NBA');
+  renderForYou();
+  // Update avatar
+  if (state.currentUser) {
+    const name = state.currentUser.name;
+    document.getElementById('home-avatar').textContent = state.currentUser.initials;
+    document.getElementById('live-avatar').textContent = state.currentUser.initials;
+  }
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+function renderAdmin() {
+  const accounts = [...MOCK_USERS, ...getAccounts()];
+  const allBets = state.placedBets;
+  // Stats
+  const totalVol = allBets.reduce((s, b) => s + (parseFloat(b.stake) || 0), 0);
+  document.getElementById('adm-total-users').textContent = accounts.length;
+  document.getElementById('adm-total-bets').textContent = allBets.length;
+  document.getElementById('adm-total-vol').textContent = money(totalVol);
+  // Users list
+  document.getElementById('admin-users-list').innerHTML = accounts.map(u => `
+    <div class="admin-user-card">
+      <div class="admin-av" style="background:${u.bg || 'linear-gradient(135deg,#00c0c8,#0050ff)'}">${u.initials}</div>
+      <div style="flex:1;min-width:0">
+        <div class="admin-user-name">${u.name}</div>
+        <div class="admin-user-meta">${u.email || '—'} · ${u.wins||0}W / ${u.losses||0}L · Joined ${u.joined||'—'}</div>
+      </div>
+      <div class="admin-user-bal">${money(u.balance||0)}</div>
+    </div>`).join('');
+  // Bets list
+  if (allBets.length === 0) {
+    document.getElementById('admin-bets-list').innerHTML = '<div style="font-family:\'Space Mono\',monospace;font-size:11px;color:#2a3a5a;padding:12px 0">No bets placed yet.</div>';
+    return;
+  }
+  document.getElementById('admin-bets-list').innerHTML = allBets.map((b, i) => {
+    const legs = b.legs || [];
+    const status = b.result === 'win' ? 'win' : b.result === 'loss' ? 'loss' : 'pending';
+    return `<div class="admin-bet-row">
+      <div class="admin-bet-id">#BET-${String(i+1).padStart(4,'0')} · ${state.currentUser?.name || 'User'}</div>
+      <div class="admin-bet-legs">${legs.map(l => l.teamAbbr + ' ' + l.odds).join(' + ') || 'Bet'}</div>
+      <div class="admin-bet-meta">
+        <span class="admin-bet-stake">Stake: ${money(parseFloat(b.stake)||0)}</span>
+        <span class="admin-bet-status ${status}">${status.toUpperCase()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── BG Animation ─────────────────────────────────────────────────────────────
+function initBgAnim() {
+  const ODDS_SAMPLES = [
+    'NYY -155 ML','BOS +132 ML','LAD -175 ML','SF +148 ML','ATL -130 ML',
+    'MIA +110 ML','CHI +155 ML','CLE -178 ML','PHI -110 ML','NYM +165 ML',
+    'O 215.5 (-110)','U 215.5 (-110)','MIA +6.5 (-108)','BOS -6.5 (-112)',
+    'O 8.5 (-115)','U 8.5 (+105)','DAL -4.5 (-110)','CHI +4.5 (-110)',
+    'TOR +155 ML','O 2.5 (-128)','U 2.5 (+108)','SOTO O 1.5 HITS',
+    'KC -3.5 (-110)','SF +3.5 (-110)','O 45.5 (-110)','U 45.5 (-110)',
+  ];
+  const rows = document.getElementById('bg-rows');
+  for (let r = 0; r < 12; r++) {
+    const row = document.createElement('div');
+    row.className = 'bg-row ' + (r % 2 === 0 ? 'go-l' : 'go-r');
+    row.style.animationDelay = -(r * 2.2) + 's';
+    const items = [];
+    for (let i = 0; i < 18; i++) items.push(ODDS_SAMPLES[(r * 4 + i) % ODDS_SAMPLES.length]);
+    const txt = items.join('   ·   ');
+    row.textContent = txt + '   ·   ' + txt;
+    rows.appendChild(row);
+  }
+  // Falling dollars
+  const layer = document.getElementById('money-layer');
+  for (let i = 0; i < 14; i++) {
+    const d = document.createElement('div');
+    d.className = 'money-drop';
+    d.textContent = '$';
+    d.style.left = (Math.random() * 92) + '%';
+    d.style.animationDuration = (9 + Math.random() * 14) + 's';
+    d.style.animationDelay = -(Math.random() * 18) + 's';
+    d.style.fontSize = (11 + Math.random() * 9) + 'px';
+    d.style.opacity = (0.3 + Math.random() * 0.5).toFixed(2);
+    layer.appendChild(d);
+  }
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
-updateBalances();
-renderPacks();
-renderFriends();
-fetchGames('NBA');   // preload the Live board
-renderForYou();      // build the For You landing feed
+initBgAnim();
+// Enter handlers for auth inputs
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+document.getElementById('signup-pass').addEventListener('keydown', e => { if (e.key==='Enter') doSignup(); });
 </script>
 </body>
 </html>

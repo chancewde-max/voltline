@@ -89,7 +89,7 @@ export default function Ticker({ bosTime }) {
     animRef.current = Animated.loop(
       Animated.timing(translateX, {
         toValue: -hw,
-        duration: 14000,
+        duration: 28000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
