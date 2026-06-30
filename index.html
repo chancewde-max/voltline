@@ -310,8 +310,8 @@
   #bg-anim { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
   .bg-rows { position:absolute; top:-50%; left:-30%; right:-30%; bottom:-50%; transform:rotate(-10deg); display:flex; flex-direction:column; gap:0; }
   .bg-row { white-space:nowrap; padding:9px 0; font-family:'Space Mono',monospace; font-size:10px; color:rgba(0,240,245,0.22); letter-spacing:.04em; }
-  .bg-row.go-l { animation:odds-go-l 22s linear infinite; }
-  .bg-row.go-r { animation:odds-go-r 26s linear infinite; }
+  .bg-row.go-l { animation:odds-go-l 55s linear infinite; }
+  .bg-row.go-r { animation:odds-go-r 65s linear infinite; }
   .money-layer { position:absolute; inset:0; }
   .money-drop { position:absolute; top:-40px; color:rgba(0,230,118,0.55); font-family:'Space Mono',monospace; font-weight:700; animation:money-fall linear infinite; user-select:none; }
 
@@ -2210,7 +2210,7 @@ function initBgAnim() {
     d.className = 'money-drop';
     d.textContent = '$';
     d.style.left = (Math.random() * 92) + '%';
-    d.style.animationDuration = (9 + Math.random() * 14) + 's';
+    d.style.animationDuration = (22 + Math.random() * 20) + 's';
     d.style.animationDelay = -(Math.random() * 18) + 's';
     d.style.fontSize = (11 + Math.random() * 9) + 'px';
     d.style.opacity = (0.5 + Math.random() * 0.5).toFixed(2);
