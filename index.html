@@ -117,7 +117,7 @@
 
   /* ticker — always at bottom: 74px (above nav), never moves */
   .ticker-bar { position: absolute; left: 0; right: 0; bottom: 74px; height: 27px; background: rgba(0,0,8,.97); border-top: 1px solid rgba(0,240,245,.2); overflow: hidden; display: flex; align-items: center; z-index: 4; }
-  .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 80s linear infinite; }
+  .ticker-track { display: flex; white-space: nowrap; animation: ticker-scroll 120s linear infinite; }
   .ticker-item { font-family: 'Space Mono', monospace; font-size: 9px; padding: 0 16px; }
   .ticker-item.hot { color: #00f0f5; }
   .ticker-item.dim { color: #4a5a7a; }
@@ -2104,13 +2104,14 @@ async function fetchTickerData() {
           else periodStr = `${clock}'`;
           prefix = '● '; color = '#00f0f5';
           items.unshift({ text: `${prefix}${awayAbbr} ${awayScore} – ${homeAbbr} ${homeScore} ${periodStr}`, color });
-        } else if (isFinal) {
-          periodStr = 'Final'; prefix = '';
-          color = parseInt(awayScore) > parseInt(homeScore) ? '#00e676' : '#4a5a7a';
-          items.push({ text: `${awayAbbr} ${awayScore} – ${homeAbbr} ${homeScore} ${periodStr}`, color });
-        } else {
-          const startTime = ev.date ? new Date(ev.date).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
-          items.push({ text: `${awayAbbr} vs ${homeAbbr} ${startTime}`, color: '#2a3a5a' });
+        } else if (isScheduled && ev.date) {
+          const evDate = new Date(ev.date);
+          const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+          const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+          if (evDate >= todayStart && evDate <= todayEnd) {
+            const startTime = evDate.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+            items.push({ text: `${awayAbbr} vs ${homeAbbr} ${startTime}`, color: '#4a5a7a' });
+          }
         }
       }
     }
