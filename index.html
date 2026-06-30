@@ -279,7 +279,7 @@
 
   /* BG ANIMATION */
   #bg-anim { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
-  .bg-rows { position:absolute; top:-20%; left:-25%; right:-25%; bottom:-20%; transform:rotate(-10deg); display:flex; flex-direction:column; gap:0; }
+  .bg-rows { position:absolute; top:-30%; left:-30%; right:-30%; bottom:-30%; transform:rotate(-10deg); display:flex; flex-direction:column; gap:0; }
   .bg-row { white-space:nowrap; padding:9px 0; font-family:'Space Mono',monospace; font-size:10px; color:rgba(0,240,245,0.22); letter-spacing:.04em; }
   .bg-row.go-l { animation:odds-go-l 22s linear infinite; }
   .bg-row.go-r { animation:odds-go-r 26s linear infinite; }
@@ -2048,7 +2048,7 @@ function initBgAnim() {
     'KC -3.5 (-110)','SF +3.5 (-110)','O 45.5 (-110)','U 45.5 (-110)',
   ];
   const rows = document.getElementById('bg-rows');
-  for (let r = 0; r < 12; r++) {
+  for (let r = 0; r < 35; r++) {
     const row = document.createElement('div');
     row.className = 'bg-row ' + (r % 2 === 0 ? 'go-l' : 'go-r');
     row.style.animationDelay = -(r * 2.2) + 's';
