@@ -565,15 +565,15 @@
       </div>
     </div>
     <div class="sport-tabs" id="sport-tabs">
-      <div class="sport-tab active" onclick="switchSport(this,'NBA')">NBA</div>
-      <div class="sport-tab" onclick="switchSport(this,'NFL')">NFL</div>
-      <div class="sport-tab" onclick="switchSport(this,'MLB')">MLB</div>
-      <div class="sport-tab" onclick="switchSport(this,'Soccer')">Soccer</div>
-      <div class="sport-tab" onclick="switchSport(this,'NHL')">NHL</div>
-      <div class="sport-tab" onclick="switchSport(this,'Tennis')">Tennis</div>
-      <div class="sport-tab" onclick="switchSport(this,'UFC')">UFC</div>
-      <div class="sport-tab" onclick="switchSport(this,'Boxing')">Boxing</div>
-      <div class="sport-tab" onclick="switchSport(this,'World Cup')">World Cup</div>
+      <div class="sport-tab active" data-sport="NBA" onclick="switchSport(this,'NBA')">NBA</div>
+      <div class="sport-tab" data-sport="NFL" onclick="switchSport(this,'NFL')">NFL</div>
+      <div class="sport-tab" data-sport="MLB" onclick="switchSport(this,'MLB')">MLB</div>
+      <div class="sport-tab" data-sport="Soccer" onclick="switchSport(this,'Soccer')">Soccer</div>
+      <div class="sport-tab" data-sport="NHL" onclick="switchSport(this,'NHL')">NHL</div>
+      <div class="sport-tab" data-sport="Tennis" onclick="switchSport(this,'Tennis')">Tennis</div>
+      <div class="sport-tab" data-sport="UFC" onclick="switchSport(this,'UFC')">UFC</div>
+      <div class="sport-tab" data-sport="Boxing" onclick="switchSport(this,'Boxing')">Boxing</div>
+      <div class="sport-tab" data-sport="World Cup" onclick="switchSport(this,'World Cup')">World Cup</div>
     </div>
     <div class="live-header">
       <div class="live-left">
@@ -969,10 +969,7 @@ const FALLBACK_GAMES = {
     { id:'ml2', sport:'MLB', period:'7:10 PM',isLive:false, isFinal:false, teams:[{abbr:'LAD',score:'—',lead:false},{abbr:'SF', score:'—',lead:false}], awayOdds:'-175', homeOdds:'+148' },
     { id:'ml3', sport:'MLB', period:'8:05 PM',isLive:false, isFinal:false, teams:[{abbr:'ATL',score:'—',lead:false},{abbr:'MIA',score:'—',lead:false}], awayOdds:'-130', homeOdds:'+110' },
   ],
-  Tennis: [
-    { id:'t1', sport:'Tennis', period:'● Set 2', isLive:true,  teams:[{abbr:'DJO',score:'6',lead:true},{abbr:'ALC',score:'4',lead:false}], awayOdds:'-155', homeOdds:'+130' },
-    { id:'t2', sport:'Tennis', period:'Final',   isLive:false, teams:[{abbr:'SIN',score:'3',lead:false},{abbr:'MED',score:'3',lead:false}], awayOdds:'+110', homeOdds:'-125' }
-  ],
+  Tennis: [],
   Boxing: [
     { id:'b1', sport:'Boxing', period:'● Rd 8', isLive:true, teams:[{abbr:'FUR',score:'—',lead:false},{abbr:'USY',score:'—',lead:false}], awayOdds:'+240', homeOdds:'-285' }
   ]
@@ -1152,7 +1149,21 @@ function navigate(screen) {
 }
 
 // ─── For You feed ─────────────────────────────────────────────────────────────
-const DEFAULT_FORYOU_SPORTS = ['NBA', 'NFL', 'NHL'];
+const ALL_FORYOU_SPORTS = ['NBA', 'NFL', 'MLB', 'Soccer', 'NHL', 'UFC', 'World Cup'];
+
+function reorderSportTabs(sportGames) {
+  const container = document.getElementById('sport-tabs');
+  if (!container) return;
+  const tabs = Array.from(container.querySelectorAll('.sport-tab'));
+  tabs.sort((a, b) => {
+    const sA = a.dataset.sport, sB = b.dataset.sport;
+    const gA = sportGames[sA] || [], gB = sportGames[sB] || [];
+    const lA = gA.filter(g => g.isLive).length, lB = gB.filter(g => g.isLive).length;
+    if (lB !== lA) return lB - lA;
+    return gB.length - gA.length;
+  });
+  tabs.forEach(tab => container.appendChild(tab));
+}
 
 function updateBalances() {
   const v = money(state.promoCash);
@@ -1186,14 +1197,32 @@ function rankForYou(games, history) {
     teamFreq[l.teamAbbr] = (teamFreq[l.teamAbbr] || 0) + 1;
     sportFreq[l.sport]   = (sportFreq[l.sport] || 0) + 1;
   }));
+  const now = Date.now();
   return games.map(g => {
+    let score = 0;
+    if (g.isLive) score += 90;
+    else {
+      const hrs = (new Date(g.date).getTime() - now) / 3600000;
+      if (hrs > 0 && hrs < 2) score += 65;
+      else if (hrs >= 0 && hrs < 8) score += 45;
+      else score += 20;
+    }
     const fav = g.teams.find(t => teamFreq[t.abbr]);
-    let score = 0, reason = 'Trending pick';
-    if (fav) { score += 100 + teamFreq[fav.abbr] * 10; reason = 'Because you bet ' + fav.abbr; }
-    else if (sportFreq[g.sport]) { score += 40 + sportFreq[g.sport] * 5; reason = 'More ' + g.sport + ' for you'; }
-    if (g.isLive) score += 8;
+    if (fav) score += 50 + teamFreq[fav.abbr] * 10;
+    else if (sportFreq[g.sport]) score += 20 + sportFreq[g.sport] * 5;
+
+    let reason;
+    if (fav && g.isLive) reason = `🔴 ${fav.abbr} Live Now`;
+    else if (fav) reason = `Because you bet ${fav.abbr}`;
+    else if (sportFreq[g.sport] && g.isLive) reason = `🔴 ${g.sport} Live`;
+    else if (g.isLive) reason = '🔴 Live Now';
+    else if (sportFreq[g.sport]) reason = `More ${g.sport} for you`;
+    else {
+      const hrs = (new Date(g.date).getTime() - now) / 3600000;
+      reason = hrs > 0 && hrs < 2 ? 'Starting Soon' : hrs >= 0 && hrs < 8 ? "Tonight's Game" : 'Popular Today';
+    }
     return { game: g, reason, score };
-  }).sort((a, b) => b.score - a.score).slice(0, 6);
+  }).sort((a, b) => b.score - a.score).slice(0, 12);
 }
 
 async function renderForYou() {
@@ -1202,25 +1231,31 @@ async function renderForYou() {
   if (!feed) return;
   const hasHistory = state.placedBets.length > 0;
   if (subEl) subEl.textContent = hasHistory ? 'Based on your bets' : 'Popular right now';
-  if (!state.forYouGames) feed.innerHTML = '<div class="games-loading"><div class="spinner"></div> Loading...</div>';
+  feed.innerHTML = '<div class="games-loading"><div class="spinner"></div> Loading...</div>';
 
-  // Sports the user has wagered on (by frequency), plus defaults so it's never empty.
-  const sportFreq = {};
-  state.placedBets.forEach(b => b.legs.forEach(l => { sportFreq[l.sport] = (sportFreq[l.sport] || 0) + 1; }));
-  const fromHistory = Object.keys(sportFreq).sort((a, b) => sportFreq[b] - sportFreq[a]);
-  const sports = [...new Set([...fromHistory, ...DEFAULT_FORYOU_SPORTS])].slice(0, 4);
+  const now = new Date();
+  const dateStr = now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate());
 
-  const all = [];
-  await Promise.all(sports.map(async sport => {
+  const sportGames = {};
+  await Promise.all(ALL_FORYOU_SPORTS.map(async sport => {
     const url = ESPN_URLS[sport];
+    if (!url) { sportGames[sport] = FALLBACK_GAMES[sport] || []; return; }
     try {
-      if (url) { const data = await fetch(url).then(r => r.json()); all.push(...parseESPN(data, sport)); }
-      else if (FALLBACK_GAMES[sport]) all.push(...FALLBACK_GAMES[sport]);
-    } catch { if (FALLBACK_GAMES[sport]) all.push(...FALLBACK_GAMES[sport]); }
+      let data = await fetch(url + '?dates=' + dateStr).then(r => r.json());
+      let games = parseESPN(data, sport);
+      if (games.length === 0) {
+        data = await fetch(url).then(r => r.json());
+        games = parseESPN(data, sport);
+      }
+      sportGames[sport] = games.length ? games : (FALLBACK_GAMES[sport] || []);
+    } catch { sportGames[sport] = FALLBACK_GAMES[sport] || []; }
   }));
 
-  // Only suggest games you can still bet on (Final games are locked).
-  const bettable = all.filter(g => !g.isFinal);
+  reorderSportTabs(sportGames);
+
+  const bettable = [];
+  for (const games of Object.values(sportGames)) bettable.push(...games.filter(g => !g.isFinal));
+
   state.forYouGames = rankForYou(bettable, state.placedBets);
   renderForYouCards();
 }
