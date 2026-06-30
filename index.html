@@ -64,34 +64,41 @@
   .see-all { font-size: 11px; color: #00f0f5; cursor: pointer; }
 
   .games-area { flex: 1; overflow-y: auto; }
-  .game-grid { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 0 18px 12px; }
-  .mkt-row { display:grid; grid-template-columns:34px 26px 1fr 50px 46px 56px; gap:3px; align-items:center; margin-bottom:5px; }
-  .mkt-row:last-child { margin-bottom:0; }
-  .mkt-header { display:grid; grid-template-columns:34px 26px 1fr 50px 46px 56px; gap:3px; margin-bottom:3px; }
-  .mkt-label { font-family:'Space Mono',monospace; font-size:8px; color:#3d4e6e; text-align:center; letter-spacing:.04em; }
-  .game-card { border-radius: 13px; padding: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,.07); background: rgba(10,10,26,1); animation: slide-in .4s ease-out both; }
-  .game-card.featured { background: linear-gradient(145deg,#0e0e30,#101240); border-color: rgba(0,240,245,.28); }
-  .game-card.in-slip  { border-color: #ffb02e; background: rgba(255,176,46,.04); }
-  .game-card.card-locked { opacity: 0.6; }
+  .game-grid { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 0 14px 12px; }
+  /* 1a compact card */
+  .game-card { border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.07); background:rgba(8,8,22,1); animation:slide-in .4s ease-out both; }
+  .game-card.featured { background:linear-gradient(145deg,#0b0b2a,#0e0e38); border-color:rgba(0,240,245,.25); }
+  .game-card.in-slip  { border-color:#ffb02e; background:rgba(255,176,46,.04); }
+  .game-card.card-locked { opacity:0.55; }
+  .gc-head { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 12px 8px; border-bottom:1px solid rgba(255,255,255,.05); }
+  .gc-label { font-family:'Space Mono',monospace; font-size:8px; font-weight:700; color:#00f0f5; letter-spacing:.1em; margin-bottom:2px; }
+  .gc-time  { font-family:'Space Grotesk',sans-serif; font-size:10px; color:#4a5a7a; }
+  .gc-sport-badge { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:3px 8px; font-family:'Space Grotesk',sans-serif; font-size:9px; color:#6b7fa3; white-space:nowrap; flex-shrink:0; }
+  .gc-sport-dot { width:5px; height:5px; border-radius:50%; background:#00f0f5; display:inline-block; }
+  .gc-sport-dot.live { background:#ff2952; animation:live-dot 1s ease-in-out infinite; }
+  .gc-cols-hdr { display:grid; grid-template-columns:2fr 1.1fr 1.1fr 1.1fr; padding:5px 12px 2px; }
+  .gc-chdr { font-family:'Space Mono',monospace; font-size:7.5px; color:#3d4e6e; text-align:center; letter-spacing:.06em; }
+  .gc-chdr:first-child { text-align:left; }
+  .gc-row { display:grid; grid-template-columns:2fr 1.1fr 1.1fr 1.1fr; padding:5px 12px; gap:5px; align-items:center; }
+  .gc-row + .gc-row { padding-top:4px; padding-bottom:8px; }
+  .gc-team-info { display:flex; align-items:center; gap:7px; min-width:0; }
+  .gc-logo { width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:7px; font-weight:700; color:#fff; flex-shrink:0; }
+  .gc-tname { display:flex; flex-direction:column; min-width:0; overflow:hidden; }
+  .gc-tname-main { font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; color:#c8d4ee; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gc-tname-main.leading { color:#fff; }
+  .gc-tname-sub { font-family:'Space Mono',monospace; font-size:8px; color:#4a5a7a; line-height:1.2; }
+  .gc-fav { font-family:'Space Mono',monospace; font-size:6px; color:#00f0f5; background:rgba(0,240,245,.12); border:1px solid rgba(0,240,245,.2); border-radius:3px; padding:0 3px; margin-left:3px; vertical-align:middle; }
+  .gc-bet-cell { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px 3px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .12s,border-color .12s; }
+  .gc-bet-cell:active { background:rgba(255,255,255,.1); }
+  .gc-bet-cell.sel { background:rgba(0,240,245,.15); border-color:#00f0f5; }
+  .gc-bet-cell.lk { background:rgba(255,255,255,.02); border-color:rgba(255,255,255,.04); cursor:default; }
+  .gc-bet-main { font-family:'Space Mono',monospace; font-size:10px; font-weight:700; color:#eef2ff; line-height:1.2; }
+  .gc-bet-cell.sel .gc-bet-main { color:#00f0f5; }
+  .gc-bet-odds { font-family:'Space Mono',monospace; font-size:7.5px; color:#4a5a7a; line-height:1.3; }
+  .gc-footer { display:flex; justify-content:space-between; align-items:center; padding:7px 12px; border-top:1px solid rgba(255,255,255,.05); }
+  .gc-more { font-family:'Space Grotesk',sans-serif; font-size:9px; color:#2a3a5a; }
+  .gc-all  { font-family:'Space Mono',monospace; font-size:9px; color:#00f0f5; cursor:pointer; }
   .locked-badge { font-size:8px; color:#555; background:rgba(255,255,255,.06); padding:1px 4px; border-radius:3px; margin-left:4px; }
-  .locked-row { cursor: default !important; }
-  .odds-btn.locked { background:rgba(255,255,255,.02); border-color:rgba(255,255,255,.06); color:#444; cursor:default; }
-  .dim { color: #444 !important; }
-  .game-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .game-period { font-family: 'Space Mono', monospace; font-size: 8px; color: #ff2952; letter-spacing: .08em; }
-  .game-period.dim { color: #4a5a7a; }
-  .game-sport  { font-family: 'Space Mono', monospace; font-size: 8px; color: #4a5a7a; }
-  .game-team-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .game-team-row:last-child { margin-bottom: 0; }
-  .team-abbr { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #b0bcd8; }
-  .team-abbr.leading { color: #eef2ff; }
-  .team-abbr.feat { color: #00f0f5; }
-  .team-right { display: flex; align-items: center; gap: 5px; }
-  .team-score { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: #b0bcd8; }
-  .team-score.leading { color: #eef2ff; }
-  .team-score.feat { color: #00f0f5; text-shadow: 0 0 10px rgba(0,240,245,.5); }
-  .odds-btn { padding: 3px 5px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 5px; font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; color: #eef2ff; cursor: pointer; transition: background .12s, border-color .12s, color .12s; flex-shrink: 0; }
-  .odds-btn.sel { background: rgba(0,240,245,.18); border-color: #00f0f5; color: #00f0f5; }
 
   /* spinner */
   .spinner { width: 24px; height: 24px; border: 2px solid rgba(0,240,245,.2); border-top-color: #00f0f5; border-radius: 50%; animation: spin .7s linear infinite; }
@@ -246,7 +253,7 @@
   .foryou-sub { font-size: 11px; color: #4a5a7a; }
   .foryou-feed { flex: 1; overflow-y: auto; padding: 0 18px 116px; display: flex; flex-direction: column; gap: 10px; }
   .foryou-card { animation: slide-in .4s ease-out both; }
-  .foryou-card .reason { font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #00f0f5; margin-bottom: 8px; }
+  .game-card .reason { font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #00f0f5; padding: 8px 12px 0; }
   /* Game detail modal */
   .game-detail-modal { position: fixed; inset: 0; z-index: 200; background: #030310; display: flex; flex-direction: column; transform: translateY(100%); transition: transform .3s cubic-bezier(.32,1,.6,1); }
   .game-detail-modal.open { transform: translateY(0); }
@@ -363,6 +370,27 @@
   .streak-badge { display:flex; align-items:center; gap:3px; font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:#ff9500; cursor:pointer; }
   /* Wallet NPN */
   .wallet-npn { font-family:'Space Grotesk',sans-serif; font-size:9px; color:#2a3a5a; text-align:center; margin-top:6px; line-height:1.5; }
+  /* Playthrough tracker */
+  .playthrough-box { background:rgba(0,240,245,0.04); border:1px solid rgba(0,240,245,0.1); border-radius:12px; padding:12px 14px; margin:10px 0 4px; }
+  .pt-title { font-family:'Space Mono',monospace; font-size:10px; color:#00f0f5; letter-spacing:.06em; margin-bottom:6px; }
+  .pt-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+  .pt-label { font-family:'Space Grotesk',sans-serif; font-size:11px; color:#6b7fa3; }
+  .pt-val { font-family:'Space Mono',monospace; font-size:11px; color:#c8d8f0; }
+  .pt-bar-bg { height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+  .pt-bar-fill { height:100%; background:linear-gradient(90deg,#00c0c8,#00f0f5); border-radius:3px; transition:width .4s; }
+  .pt-note { font-family:'Space Grotesk',sans-serif; font-size:9px; color:#2a3a5a; margin-top:5px; }
+  .redeem-btn { display:none; width:100%; margin-top:10px; padding:12px; background:linear-gradient(90deg,#00c060,#00e676); border:none; border-radius:12px; font-family:'Space Mono',monospace; font-size:12px; font-weight:700; color:#001a0e; letter-spacing:.08em; cursor:pointer; text-align:center; }
+  .redeem-btn.active { display:block; }
+  /* Redeem modal */
+  .redeem-overlay { position:absolute; inset:0; background:rgba(0,0,8,0.88); z-index:700; display:flex; align-items:center; justify-content:center; }
+  .redeem-overlay.hidden { display:none; }
+  .redeem-card { background:linear-gradient(160deg,#061a10,#0a2218); border:1px solid rgba(0,230,118,0.3); border-radius:22px; padding:28px 22px 22px; width:290px; text-align:center; }
+  .redeem-icon { font-size:36px; margin-bottom:8px; }
+  .redeem-title { font-family:'Space Mono',monospace; font-size:15px; font-weight:700; color:#00e676; margin-bottom:6px; }
+  .redeem-amount { font-family:'Space Mono',monospace; font-size:28px; font-weight:700; color:#fff; margin:10px 0; }
+  .redeem-sub { font-family:'Space Grotesk',sans-serif; font-size:12px; color:#6b9e83; margin-bottom:18px; }
+  .redeem-confirm-btn { display:block; width:100%; padding:14px; background:linear-gradient(90deg,#00c060,#00e676); border:none; border-radius:12px; font-family:'Space Mono',monospace; font-size:12px; font-weight:700; color:#001a0e; letter-spacing:.08em; cursor:pointer; margin-bottom:10px; }
+  .redeem-cancel-btn { font-family:'Space Grotesk',sans-serif; font-size:12px; color:#2a5a3a; cursor:pointer; }
 
   /* BALANCE HEADER */
   .bal-group { display:flex; align-items:center; gap:10px; }
@@ -425,7 +453,7 @@
       <div class="auth-btn" onclick="doLogin()">SIGN IN</div>
       <div class="auth-switch">Don't have an account? <span onclick="navigate('signup')">Sign up</span></div>
       <div class="admin-link" onclick="adminAccess()">⬡ ADMIN ACCESS</div>
-      <div class="auth-legal">No Purchase Necessary to play. Must be 18+. Void where prohibited.<br>Promotional Cash has no cash value &amp; cannot be withdrawn.</div>
+      <div class="auth-legal">No Purchase Necessary to play. Must be 18+. Void where prohibited.<br>Promotional Cash is redeemable for prizes after completing 1× wagering playthrough.</div>
     </div>
   </div>
 
@@ -788,6 +816,16 @@
           <div class="promo-tile"><div class="tile-label">Promotional Cash</div><div class="promo-amount" id="promo-cash">$0.00</div></div>
           <div class="gems-tile"><div class="tile-label">Gems</div><div class="gems-row"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 2h8l3 4-7 8-7-8 3-4z" fill="#00f0f5" fill-opacity=".22" stroke="#00f0f5" stroke-width="1.1" stroke-linejoin="round"/><path d="M1 6h14M5.5 2 4 6l4 8 4-8-1.5-4" stroke="#00f0f5" stroke-width=".8" stroke-opacity=".5"/></svg><span class="gems-count" id="gems-count">0</span></div></div>
         </div>
+        <div class="playthrough-box" id="playthrough-box" style="display:none">
+          <div class="pt-title">PLAYTHROUGH PROGRESS</div>
+          <div class="pt-row">
+            <span class="pt-label">Wagered</span>
+            <span class="pt-val"><span id="pt-wagered">$0.00</span> / <span id="pt-required">$0.00</span></span>
+          </div>
+          <div class="pt-bar-bg"><div class="pt-bar-fill" id="pt-bar" style="width:0%"></div></div>
+          <div class="pt-note">Wager your promo cash 1× before redeeming · No purchase required</div>
+        </div>
+        <button class="redeem-btn" id="redeem-btn" onclick="openRedeemModal()">REDEEM CASH</button>
         <div class="buy-header"><span class="buy-title">Add Funds</span><span class="buy-subtitle">+ bonus promo cash</span></div>
         <div class="wallet-npn">No Purchase Necessary · Free daily login rewards available · 18+</div>
         <div class="deposit-grid" id="pack-grid"></div>
@@ -953,6 +991,17 @@
       <div class="reward-npn">No Purchase Necessary · Free daily reward</div>
     </div>
   </div>
+  <!-- Redeem Modal -->
+  <div class="redeem-overlay hidden" id="redeem-overlay">
+    <div class="redeem-card">
+      <div class="redeem-icon">🏆</div>
+      <div class="redeem-title">REDEEM PROMO CASH</div>
+      <div class="redeem-amount" id="redeem-amount">$0.00</div>
+      <div class="redeem-sub">Playthrough complete! Your promo cash is ready to be redeemed for prizes.</div>
+      <button class="redeem-confirm-btn" onclick="confirmRedeem()">CONFIRM REDEMPTION</button>
+      <div class="redeem-cancel-btn" onclick="closeRedeemModal()">Cancel</div>
+    </div>
+  </div>
 </div><!-- /app -->
 
 <script>
@@ -965,6 +1014,7 @@ const state = {
   placedBets: [],
   currentUser: null,
   friends: [],
+  playthroughNeeded: 0,
   min: 2, sec: 34
 };
 
@@ -1239,7 +1289,6 @@ function updateBalances() {
   // Update "in slips" total (sum of stakes for open slip)
   const slipTotal = state.betSlip.length * 10; // placeholder; real stake from input
   const stakeVal = parseFloat(document.getElementById('stake-input')?.value) || 0;
-  const inSlips = stakeVal > 0 ? money(stakeVal) : (state.betSlip.length > 0 ? `${state.betSlip.length} pick${state.betSlip.length !== 1 ? 's' : ''}` : '$0.00');
   const inSlipsAmt = stakeVal > 0 ? money(stakeVal) : '$0.00';
   const c = document.getElementById('foryou-in-slips'); if (c) c.textContent = inSlipsAmt;
   const d = document.getElementById('live-in-slips');   if (d) d.textContent = inSlipsAmt;
@@ -1247,6 +1296,32 @@ function updateBalances() {
   const initials = state.currentUser ? state.currentUser.initials : 'JD';
   const av1 = document.getElementById('home-avatar'); if (av1) av1.textContent = initials;
   const av2 = document.getElementById('live-avatar'); if (av2) av2.textContent = initials;
+  // Promo cash / gems display
+  const prEl = document.getElementById('promo-cash'); if (prEl) prEl.textContent = money(state.promoCash);
+  const gmEl = document.getElementById('gems-count'); if (gmEl) gmEl.textContent = state.gems.toLocaleString();
+  // Playthrough tracker
+  const pt = state.playthroughNeeded || 0;
+  const ptBox = document.getElementById('playthrough-box');
+  const redeemBtn = document.getElementById('redeem-btn');
+  const ptWagered = document.getElementById('pt-wagered');
+  const ptRequired = document.getElementById('pt-required');
+  const ptBar = document.getElementById('pt-bar');
+  if (ptBox) {
+    if (state.promoCash > 0) {
+      ptBox.style.display = 'block';
+      const totalReq = state.currentUser?.totalPlaythroughRequired || state.promoCash;
+      const wagered = Math.max(0, totalReq - pt);
+      const fillPct = totalReq > 0 ? Math.min(100, Math.round((wagered / totalReq) * 100)) : 0;
+      if (ptWagered) ptWagered.textContent = money(wagered);
+      if (ptRequired) ptRequired.textContent = money(totalReq);
+      if (ptBar) ptBar.style.width = fillPct + '%';
+    } else {
+      ptBox.style.display = 'none';
+    }
+  }
+  if (redeemBtn) {
+    redeemBtn.className = 'redeem-btn' + (pt <= 0 && state.promoCash > 0 ? ' active' : '');
+  }
 }
 
 function updatePromoDots() {
@@ -1337,37 +1412,9 @@ function renderForYouCards() {
     feed.innerHTML = '<div class="games-empty">No suggestions right now — check the Live tab.</div>';
     return;
   }
-  feed.innerHTML = list.map(({ game, reason }, idx) => {
-    const inSlip = state.betSlip.some(b => b.gameId === game.id);
-    const tot = getTotal(game);
-    return `
-      <div class="game-card foryou-card${inSlip ? ' in-slip' : ''}" style="animation-delay:${idx * 0.06}s">
-        <div class="reason">${reason}</div>
-        <div class="game-card-header">
-          <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
-          <span class="game-sport">${game.sport}</span>
-        </div>
-        <div class="mkt-header"><span></span><span></span><span class="mkt-label">SPR</span><span class="mkt-label">ML</span><span class="mkt-label">O/U</span></div>
-        ${game.teams.map((t, i) => {
-          const ml = i === 0 ? game.awayOdds : game.homeOdds;
-          const spr = getSpread(game, i);
-          const ouSide = i === 0 ? 'over' : 'under';
-          const ouLabel = `${i === 0 ? 'O' : 'U'} ${tot.line}`;
-          const ouOdds  = i === 0 ? tot.overOdds : tot.underOdds;
-          const selML  = state.betSlip.some(b => b.id === `${game.id}-ml-${t.abbr}`);
-          const selSpr = state.betSlip.some(b => b.id === `${game.id}-spr-${t.abbr}`);
-          const selOU  = state.betSlip.some(b => b.id === `${game.id}-ou-${ouSide}`);
-          const lc = t.lead ? ' leading' : '';
-          return `<div class="mkt-row">
-            <span class="team-abbr${lc}">${t.abbr}</span>
-            <span class="team-score${lc}">${t.score}</span>
-            <span class="odds-btn${selSpr?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spr.odds}','${game.sport}','spr','${spr.line}')">${spr.line}</span>
-            <span class="odds-btn${selML?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${ml}','${game.sport}','ml','')">${ml}</span>
-            <span class="odds-btn${selOU?' sel':''}" onclick="toggleBet('${game.id}','${ouSide}','','${ouOdds}','${game.sport}','ou','${tot.line}')">${ouLabel}</span>
-          </div>`;
-        }).join('')}
-      </div>`;
-  }).join('');
+  feed.innerHTML = list.map(({ game, reason }, idx) =>
+    `<div style="animation-delay:${idx * 0.06}s">${gameCardHTML(game, game.sport, false, reason)}</div>`
+  ).join('');
 }
 
 // Refresh whichever board is currently showing after a slip change.
@@ -1434,37 +1481,87 @@ async function fetchGames(sport) {
   renderGames(games, sport);
 }
 
-function gameCardHTML(game, sport, featured) {
+function gcLogoStyle(abbr) {
+  let h = 0;
+  for (let i = 0; i < abbr.length; i++) h = (h * 31 + abbr.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  return `background:linear-gradient(135deg,hsl(${hue},55%,22%),hsl(${(hue+45)%360},65%,32%))`;
+}
+
+function gameCardHTML(game, sport, featured, reason) {
   const inSlip = state.betSlip.some(b => b.gameId === game.id);
   const locked = game.isFinal;
   const tot = locked ? null : getTotal(game);
+  const sp = sport || game.sport || '';
+
+  let timeText = game.period || '';
+  if (!game.isLive && !locked && game.date) {
+    const d = new Date(game.date);
+    if (!isNaN(d)) timeText = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  }
+
+  const teamRows = game.teams.map((t, i) => {
+    if (locked) return `
+      <div class="gc-row">
+        <div class="gc-team-info">
+          <div class="gc-logo" style="${gcLogoStyle(t.abbr)}">${t.abbr.slice(0,3)}</div>
+          <div class="gc-tname"><div class="gc-tname-main">${t.abbr}</div><div class="gc-tname-sub">${t.score ?? ''}</div></div>
+        </div>
+        <div class="gc-bet-cell lk"><div class="gc-bet-main">—</div></div>
+        <div class="gc-bet-cell lk"><div class="gc-bet-main">—</div></div>
+        <div class="gc-bet-cell lk"><div class="gc-bet-main">—</div></div>
+      </div>`;
+    const ml = i === 0 ? game.awayOdds : game.homeOdds;
+    const spr = getSpread(game, i);
+    const ouSide = i === 0 ? 'over' : 'under';
+    const ouOdds = i === 0 ? tot.overOdds : tot.underOdds;
+    const selML  = state.betSlip.some(b => b.id === `${game.id}-ml-${t.abbr}`);
+    const selSpr = state.betSlip.some(b => b.id === `${game.id}-spr-${t.abbr}`);
+    const selOU  = state.betSlip.some(b => b.id === `${game.id}-ou-${ouSide}`);
+    const isFav  = ml && parseInt(ml) < 0;
+    const lc = t.lead ? ' leading' : '';
+    return `
+      <div class="gc-row">
+        <div class="gc-team-info">
+          <div class="gc-logo" style="${gcLogoStyle(t.abbr)}">${t.abbr.slice(0,3)}</div>
+          <div class="gc-tname">
+            <div class="gc-tname-main${lc}">${t.abbr}${isFav?'<span class="gc-fav">FAV</span>':''}</div>
+            ${t.score != null ? `<div class="gc-tname-sub">${t.score}</div>` : ''}
+          </div>
+        </div>
+        <div class="gc-bet-cell${selSpr?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spr.odds}','${sp}','spr','${spr.line}')">
+          <div class="gc-bet-main">${spr.line}</div><div class="gc-bet-odds">${spr.odds}</div>
+        </div>
+        <div class="gc-bet-cell${selML?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${ml}','${sp}','ml','')">
+          <div class="gc-bet-main">${ml}</div><div class="gc-bet-odds">ML</div>
+        </div>
+        <div class="gc-bet-cell${selOU?' sel':''}" onclick="toggleBet('${game.id}','${ouSide}','','${ouOdds}','${sp}','ou','${tot.line}')">
+          <div class="gc-bet-main">${ouSide==='over'?'O':'U'} ${tot.line}</div><div class="gc-bet-odds">${ouOdds}</div>
+        </div>
+      </div>`;
+  }).join('');
+
   return `
-    <div class="game-card${featured ? ' featured' : ''}${inSlip ? ' in-slip' : ''}${locked ? ' card-locked' : ''}" id="card-${game.id}">
-      <div class="game-card-header card-clickable-header" onclick="openGame('${game.id}')">
-        <span class="game-period${game.isLive ? '' : ' dim'}">${game.period}</span>
-        <span class="game-sport">${game.sport}${locked ? ' <span class="locked-badge">LOCKED</span>' : ''} <span style="color:#2a3a5a;font-size:11px">›</span></span>
+    <div class="game-card${featured?' featured':''}${inSlip?' in-slip':''}${locked?' card-locked':''}" id="card-${game.id}">
+      ${reason ? `<div class="reason">${reason}</div>` : ''}
+      <div class="gc-head">
+        <div>
+          <div class="gc-label">${game.isLive ? '● LIVE NOW' : locked ? 'FINAL' : 'TONIGHT\'S GAME'}</div>
+          <div class="gc-time">${timeText}</div>
+        </div>
+        <div class="gc-sport-badge"><span class="gc-sport-dot${game.isLive?' live':''}"></span>${sp}</div>
       </div>
-      ${locked
-        ? game.teams.map(t => `<div class="game-team-row locked-row"><span class="team-abbr dim">${t.abbr}</span><div class="team-right"><span class="team-score dim">${t.score}</span><span class="odds-btn locked">—</span></div></div>`).join('')
-        : `<div class="mkt-header"><span></span><span></span><span class="mkt-label">SPR</span><span class="mkt-label">ML</span><span class="mkt-label">O/U</span></div>
-      ${game.teams.map((t, i) => {
-        const ml = i === 0 ? game.awayOdds : game.homeOdds;
-        const spr = getSpread(game, i);
-        const ouSide = i === 0 ? 'over' : 'under';
-        const ouLabel = `${i === 0 ? 'O' : 'U'} ${tot.line}`;
-        const ouOdds  = i === 0 ? tot.overOdds : tot.underOdds;
-        const selML  = state.betSlip.some(b => b.id === `${game.id}-ml-${t.abbr}`);
-        const selSpr = state.betSlip.some(b => b.id === `${game.id}-spr-${t.abbr}`);
-        const selOU  = state.betSlip.some(b => b.id === `${game.id}-ou-${ouSide}`);
-        const lc = t.lead ? ' leading' : '';
-        return `<div class="mkt-row">
-          <span class="team-abbr${lc}">${t.abbr}</span>
-          <span class="team-score${lc}">${t.score}</span>
-          <span class="odds-btn${selSpr?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spr.odds}','${sport}','spr','${spr.line}')">${spr.line}</span>
-          <span class="odds-btn${selML?' sel':''}" onclick="toggleBet('${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${ml}','${sport}','ml','')">${ml}</span>
-          <span class="odds-btn${selOU?' sel':''}" onclick="toggleBet('${game.id}','${ouSide}','','${ouOdds}','${sport}','ou','${tot.line}')">${ouLabel}</span>
-        </div>`;
-      }).join('')}`}
+      <div class="gc-cols-hdr">
+        <div class="gc-chdr"></div>
+        <div class="gc-chdr">SPREAD</div>
+        <div class="gc-chdr">ML</div>
+        <div class="gc-chdr">TOTAL</div>
+      </div>
+      ${teamRows}
+      <div class="gc-footer">
+        <span class="gc-more">+ more wagers</span>
+        <span class="gc-all" onclick="openGame('${game.id}')">All markets →</span>
+      </div>
     </div>`;
 }
 
@@ -1813,6 +1910,8 @@ function placeSlip() {
   state.placedBets.push(bet);
 
   state.promoCash = Math.max(0, state.promoCash - stakeNum);
+  // Reduce playthrough requirement by amount wagered
+  state.playthroughNeeded = Math.max(0, (state.playthroughNeeded || 0) - stakeNum);
   // Persist updated balance back to user account in localStorage
   if (state.currentUser) {
     const accounts = getAccounts();
@@ -1820,6 +1919,7 @@ function placeSlip() {
     if (idx >= 0) {
       accounts[idx].balance = state.promoCash;
       accounts[idx].bets = (accounts[idx].bets || 0) + 1;
+      accounts[idx].playthroughNeeded = state.playthroughNeeded;
       saveAccounts(accounts);
       state.currentUser = accounts[idx];
     }
@@ -2042,11 +2142,19 @@ function completePurchase() {
   if (!pack) return;
   state.promoCash += pack.promo;
   state.gems      += pack.gems;
+  state.playthroughNeeded = (state.playthroughNeeded || 0) + pack.promo;
   // Persist to account
   if (state.currentUser) {
     const accounts = getAccounts();
     const idx = accounts.findIndex(a => a.id === state.currentUser.id);
-    if (idx >= 0) { accounts[idx].balance = state.promoCash; accounts[idx].gems = state.gems; saveAccounts(accounts); state.currentUser = accounts[idx]; }
+    if (idx >= 0) {
+      accounts[idx].balance = state.promoCash;
+      accounts[idx].gems = state.gems;
+      accounts[idx].playthroughNeeded = state.playthroughNeeded;
+      accounts[idx].totalPlaythroughRequired = (accounts[idx].totalPlaythroughRequired || 0) + pack.promo;
+      saveAccounts(accounts);
+      state.currentUser = accounts[idx];
+    }
   }
   updateBalances();
   navigate('account');
@@ -2202,7 +2310,7 @@ function renderAccount() {
   document.getElementById('total-bets').textContent  = total + ' settled';
   document.getElementById('promo-cash').textContent  = money(state.promoCash);
   document.getElementById('gems-count').textContent  = state.gems.toLocaleString('en-US');
-  renderPacks(); updateBuyBtn(); renderFriends();
+  renderPacks(); updateBuyBtn(); renderFriends(); updateBalances();
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -2238,11 +2346,12 @@ function doSignup() {
   const accounts = getAccounts();
   if (accounts.find(a => a.email === email)) { errEl.textContent = 'Email already registered.'; return; }
   const initials = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-  const newUser = { id:'u'+Date.now(), name, initials, email, username:email.split('@')[0], password:pass, balance:1000, gems:0, bets:0, wins:0, losses:0, loginStreak:0, lastLoginDate:null, joined:new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}) };
+  const newUser = { id:'u'+Date.now(), name, initials, email, username:email.split('@')[0], password:pass, balance:1000, gems:0, bets:0, wins:0, losses:0, loginStreak:0, lastLoginDate:null, playthroughNeeded:1000, totalPlaythroughRequired:1000, joined:new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}) };
   accounts.push(newUser);
   saveAccounts(accounts);
   state.currentUser = newUser;
   state.promoCash = 1000;
+  state.playthroughNeeded = 1000;
   state.gems = 0;
   initMainApp();
   navigate('home');
@@ -2270,12 +2379,17 @@ function checkDailyReward(user) {
 
   state.gems      += gemsEarned;
   state.promoCash += cashEarned;
+  if (cashEarned > 0) {
+    state.playthroughNeeded = (state.playthroughNeeded || 0) + cashEarned;
+    user.totalPlaythroughRequired = (user.totalPlaythroughRequired || 0) + cashEarned;
+  }
 
-  user.gems          = state.gems;
-  user.balance       = state.promoCash;
-  user.loginStreak   = streak;
-  user.lastLoginDate = today;
-  state.currentUser  = user;
+  user.gems              = state.gems;
+  user.balance           = state.promoCash;
+  user.loginStreak       = streak;
+  user.lastLoginDate     = today;
+  user.playthroughNeeded = state.playthroughNeeded || 0;
+  state.currentUser      = user;
 
   const accounts = getAccounts();
   const idx = accounts.findIndex(a => a.id === user.id);
@@ -2311,6 +2425,38 @@ function closeReward() {
   if (badge && num && streak > 0) { num.textContent = streak; badge.style.display = 'flex'; }
 }
 
+function openRedeemModal() {
+  const el = document.getElementById('redeem-overlay');
+  const amtEl = document.getElementById('redeem-amount');
+  if (el && amtEl) {
+    amtEl.textContent = money(state.promoCash);
+    el.classList.remove('hidden');
+  }
+}
+
+function closeRedeemModal() {
+  document.getElementById('redeem-overlay').classList.add('hidden');
+}
+
+function confirmRedeem() {
+  const amount = state.promoCash;
+  state.promoCash = 0;
+  state.playthroughNeeded = 0;
+  if (state.currentUser) {
+    const accounts = getAccounts();
+    const idx = accounts.findIndex(a => a.id === state.currentUser.id);
+    if (idx >= 0) {
+      accounts[idx].balance = 0;
+      accounts[idx].playthroughNeeded = 0;
+      saveAccounts(accounts);
+      state.currentUser = accounts[idx];
+    }
+  }
+  closeRedeemModal();
+  updateBalances();
+  showToast(`${money(amount)} submitted for redemption! Allow 3-5 business days.`);
+}
+
 function adminAccess() {
   const pw = prompt('Admin password:');
   if (pw !== 'voltline2026') { alert('Access denied.'); return; }
@@ -2321,10 +2467,11 @@ function initMainApp() {
   const user = state.currentUser;
   if (user) {
     // Load user's balance and stats into live state
-    state.promoCash = user.balance ?? 1000;
-    state.gems      = user.gems    ?? 0;
-    state.wins      = user.wins    ?? 0;
-    state.losses    = user.losses  ?? 0;
+    state.promoCash                   = user.balance                   ?? 1000;
+    state.gems                        = user.gems                        ?? 0;
+    state.playthroughNeeded           = user.playthroughNeeded           ?? 0;
+    state.wins                        = user.wins                        ?? 0;
+    state.losses                      = user.losses                      ?? 0;
     state.placedBets = [];  // fresh session; history tied to account
     document.getElementById('home-avatar').textContent = user.initials;
     document.getElementById('live-avatar').textContent = user.initials;
