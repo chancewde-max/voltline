@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, SCREEN_W, money } from '../constants';
 import { ESPN_URLS, parseESPN, FALLBACK } from '../bets';
+import { enrichGamesWithOdds } from '../oddsApi';
 import BottomNav from '../components/BottomNav';
 import Ticker from '../components/Ticker';
 import BetSlip from '../components/BetSlip';
@@ -50,7 +51,9 @@ export default function LiveScreen({ promoCash, gameTime, navigate, betSlip, onA
       const res = await fetch(url);
       const data = await res.json();
       const parsed = parseESPN(data, sport);
-      setGames(parsed.length > 0 ? parsed : (FALLBACK[sport] || []));
+      const base = parsed.length > 0 ? parsed : (FALLBACK[sport] || []);
+      const enriched = await enrichGamesWithOdds(base, sport);
+      setGames(enriched);
     } catch {
       setGames(FALLBACK[sport] || []);
     } finally {

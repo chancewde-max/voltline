@@ -111,10 +111,12 @@ export default function GameDetailModal({ game, visible, onClose, betSlip, onAdd
               <Text style={s.sectionTitle}>PROPS</Text>
               {props.map((prop, idx) => {
                 const seed = strHash(game.id + prop);
-                const line = genLine(seed, game.sport, idx);
-                const overOdds = deterministicOdds(seed);
-                const underOdds = deterministicOdds(strHash(game.id + prop + 'u'));
-                const overSel = betSlip.some(b => b.id === `${game.id}-${prop}-o`);
+                // Game Total uses real odds from API when available
+                const isTotal = idx === 0;
+                const line    = isTotal && game.totalLine != null ? game.totalLine : genLine(seed, game.sport, idx);
+                const overOdds  = isTotal && game.overOdds  ? game.overOdds  : deterministicOdds(seed);
+                const underOdds = isTotal && game.underOdds ? game.underOdds : deterministicOdds(strHash(game.id + prop + 'u'));
+                const overSel  = betSlip.some(b => b.id === `${game.id}-${prop}-o`);
                 const underSel = betSlip.some(b => b.id === `${game.id}-${prop}-u`);
                 return (
                   <View key={prop} style={s.propGroup}>
@@ -149,13 +151,16 @@ export default function GameDetailModal({ game, visible, onClose, betSlip, onAdd
             <View style={s.section}>
               <Text style={s.sectionTitle}>SPREADS</Text>
               {game.teams.map((t, i) => {
-                const spreadSeed = strHash(game.id + t.abbr + 'spd');
-                const spreadVal = ((spreadSeed % 14) + 1) + 0.5;
-                const spreadOdds = deterministicOdds(spreadSeed);
+                const isAway = i === 0;
+                // Use real spread from API when available
+                const spreadLine = isAway
+                  ? (game.awaySpreadLine ?? (() => { const s2 = strHash(game.id + t.abbr + 'spd'); const v = ((s2 % 14) + 1) + 0.5; return parseInt(game.awayOdds) < 0 ? `-${v}` : `+${v}`; })())
+                  : (game.homeSpreadLine ?? (() => { const s2 = strHash(game.id + t.abbr + 'spd'); const v = ((s2 % 14) + 1) + 0.5; return parseInt(game.homeOdds) < 0 ? `-${v}` : `+${v}`; })());
+                const spreadOdds = isAway
+                  ? (game.awaySpreadOdds ?? deterministicOdds(strHash(game.id + t.abbr + 'spd')))
+                  : (game.homeSpreadOdds ?? deterministicOdds(strHash(game.id + t.abbr + 'spd')));
                 const spreadId = `${game.id}-${t.abbr}-spd`;
                 const sel = betSlip.some(b => b.id === spreadId);
-                const isFav = parseInt(i === 0 ? game.awayOdds : game.homeOdds) < 0;
-                const spreadSign = isFav ? `-${spreadVal}` : `+${spreadVal}`;
                 return (
                   <TouchableOpacity
                     key={t.abbr}
@@ -164,7 +169,7 @@ export default function GameDetailModal({ game, visible, onClose, betSlip, onAdd
                     onPress={() => !game.isFinal && onAddBet({ id: spreadId, gameId: game.id, teamAbbr: t.abbr, opponent: game.teams[1 - i].abbr, odds: spreadOdds, sport: game.sport })}
                     activeOpacity={0.7}
                   >
-                    <Text style={s.propLabel}>{t.abbr} {spreadSign}</Text>
+                    <Text style={s.propLabel}>{t.abbr} {spreadLine}</Text>
                     <Text style={[s.propOdds, sel && s.propOddsSel]}>{game.isFinal ? '—' : spreadOdds}</Text>
                   </TouchableOpacity>
                 );

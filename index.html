@@ -748,6 +748,99 @@ const FALLBACK_GAMES = {
 function money(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
 function pad2(n)  { return String(n).padStart(2,'0'); }
 
+// ── The Odds API ─────────────────────────────────────────────────────────────
+const ODDS_API_KEY = '311547d4bddf62ae644194bd9f3a9a5d';
+const ODDS_SPORT_KEYS = {
+  NBA:'basketball_nba', NFL:'americanfootball_nfl', MLB:'baseball_mlb', NHL:'icehockey_nhl',
+};
+const TEAM_ABBR = {
+  'Atlanta Hawks':'ATL','Boston Celtics':'BOS','Brooklyn Nets':'BKN','Charlotte Hornets':'CHA',
+  'Chicago Bulls':'CHI','Cleveland Cavaliers':'CLE','Dallas Mavericks':'DAL','Denver Nuggets':'DEN',
+  'Detroit Pistons':'DET','Golden State Warriors':'GSW','Houston Rockets':'HOU','Indiana Pacers':'IND',
+  'Los Angeles Clippers':'LAC','Los Angeles Lakers':'LAL','Memphis Grizzlies':'MEM','Miami Heat':'MIA',
+  'Milwaukee Bucks':'MIL','Minnesota Timberwolves':'MIN','New Orleans Pelicans':'NOP','New York Knicks':'NYK',
+  'Oklahoma City Thunder':'OKC','Orlando Magic':'ORL','Philadelphia 76ers':'PHI','Phoenix Suns':'PHX',
+  'Portland Trail Blazers':'POR','Sacramento Kings':'SAC','San Antonio Spurs':'SAS','Toronto Raptors':'TOR',
+  'Utah Jazz':'UTA','Washington Wizards':'WAS',
+  'Arizona Cardinals':'ARI','Atlanta Falcons':'ATL','Baltimore Ravens':'BAL','Buffalo Bills':'BUF',
+  'Carolina Panthers':'CAR','Chicago Bears':'CHI','Cincinnati Bengals':'CIN','Cleveland Browns':'CLE',
+  'Dallas Cowboys':'DAL','Denver Broncos':'DEN','Detroit Lions':'DET','Green Bay Packers':'GB',
+  'Houston Texans':'HOU','Indianapolis Colts':'IND','Jacksonville Jaguars':'JAX','Kansas City Chiefs':'KC',
+  'Las Vegas Raiders':'LV','Los Angeles Chargers':'LAC','Los Angeles Rams':'LAR','Miami Dolphins':'MIA',
+  'Minnesota Vikings':'MIN','New England Patriots':'NE','New Orleans Saints':'NO','New York Giants':'NYG',
+  'New York Jets':'NYJ','Philadelphia Eagles':'PHI','Pittsburgh Steelers':'PIT','San Francisco 49ers':'SF',
+  'Seattle Seahawks':'SEA','Tampa Bay Buccaneers':'TB','Tennessee Titans':'TEN','Washington Commanders':'WSH',
+  'Arizona Diamondbacks':'ARI','Atlanta Braves':'ATL','Baltimore Orioles':'BAL','Boston Red Sox':'BOS',
+  'Chicago Cubs':'CHC','Chicago White Sox':'CWS','Cincinnati Reds':'CIN','Cleveland Guardians':'CLE',
+  'Colorado Rockies':'COL','Detroit Tigers':'DET','Houston Astros':'HOU','Kansas City Royals':'KC',
+  'Los Angeles Angels':'LAA','Los Angeles Dodgers':'LAD','Miami Marlins':'MIA','Milwaukee Brewers':'MIL',
+  'Minnesota Twins':'MIN','New York Mets':'NYM','New York Yankees':'NYY','Oakland Athletics':'OAK',
+  'Philadelphia Phillies':'PHI','Pittsburgh Pirates':'PIT','San Diego Padres':'SD','San Francisco Giants':'SF',
+  'Seattle Mariners':'SEA','St. Louis Cardinals':'STL','Tampa Bay Rays':'TB','Texas Rangers':'TEX',
+  'Toronto Blue Jays':'TOR','Washington Nationals':'WSH',
+  'Anaheim Ducks':'ANA','Boston Bruins':'BOS','Buffalo Sabres':'BUF','Calgary Flames':'CGY',
+  'Carolina Hurricanes':'CAR','Chicago Blackhawks':'CHI','Colorado Avalanche':'COL','Columbus Blue Jackets':'CBJ',
+  'Dallas Stars':'DAL','Detroit Red Wings':'DET','Edmonton Oilers':'EDM','Florida Panthers':'FLA',
+  'Los Angeles Kings':'LAK','Minnesota Wild':'MIN','Montreal Canadiens':'MTL','Nashville Predators':'NSH',
+  'New Jersey Devils':'NJD','New York Islanders':'NYI','New York Rangers':'NYR','Ottawa Senators':'OTT',
+  'Philadelphia Flyers':'PHI','Pittsburgh Penguins':'PIT','San Jose Sharks':'SJS','Seattle Kraken':'SEA',
+  'St. Louis Blues':'STL','Tampa Bay Lightning':'TBL','Toronto Maple Leafs':'TOR','Utah Hockey Club':'UTA',
+  'Vancouver Canucks':'VAN','Vegas Golden Knights':'VGK','Washington Capitals':'WSH','Winnipeg Jets':'WPG',
+};
+function fmtOdds(p) { return p > 0 ? '+'+p : ''+p; }
+const oddsCache = {};
+async function enrichGamesWithOdds(games, sport) {
+  const sportKey = ODDS_SPORT_KEYS[sport];
+  if (!ODDS_API_KEY || !sportKey) return games;
+  const cached = oddsCache[sport];
+  if (cached && Date.now() - cached.ts < 300000) return mergeOdds(games, cached.data);
+  try {
+    const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`;
+    const data = await fetch(url).then(r => r.json());
+    if (!Array.isArray(data)) return games;
+    oddsCache[sport] = { ts: Date.now(), data };
+    return mergeOdds(games, data);
+  } catch { return games; }
+}
+function mergeOdds(games, events) {
+  const map = {};
+  for (const ev of events) {
+    const awayAbbr = TEAM_ABBR[ev.away_team], homeAbbr = TEAM_ABBR[ev.home_team];
+    if (!awayAbbr || !homeAbbr) continue;
+    const bk = ev.bookmakers?.[0]; if (!bk) continue;
+    const h2h = bk.markets?.find(m => m.key === 'h2h');
+    const spr = bk.markets?.find(m => m.key === 'spreads');
+    const tot = bk.markets?.find(m => m.key === 'totals');
+    const entry = {};
+    if (h2h) {
+      const a = h2h.outcomes.find(o => TEAM_ABBR[o.name] === awayAbbr);
+      const h = h2h.outcomes.find(o => TEAM_ABBR[o.name] === homeAbbr);
+      if (a && h) { entry.awayOdds = fmtOdds(a.price); entry.homeOdds = fmtOdds(h.price); }
+    }
+    if (spr) {
+      const a = spr.outcomes.find(o => TEAM_ABBR[o.name] === awayAbbr);
+      const h = spr.outcomes.find(o => TEAM_ABBR[o.name] === homeAbbr);
+      if (a && h) {
+        entry.awaySpreadLine = a.point > 0 ? '+'+a.point : ''+a.point;
+        entry.awaySpreadOdds = fmtOdds(a.price);
+        entry.homeSpreadLine = h.point > 0 ? '+'+h.point : ''+h.point;
+        entry.homeSpreadOdds = fmtOdds(h.price);
+      }
+    }
+    if (tot) {
+      const o = tot.outcomes.find(o => o.name === 'Over');
+      const u = tot.outcomes.find(o => o.name === 'Under');
+      if (o && u) { entry.totalLine = o.point; entry.overOdds = fmtOdds(o.price); entry.underOdds = fmtOdds(u.price); }
+    }
+    map[awayAbbr+'-'+homeAbbr] = entry;
+  }
+  return games.map(g => {
+    const real = map[g.teams[0].abbr+'-'+g.teams[1].abbr];
+    return real ? Object.assign({}, g, real) : g;
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function strHash(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
@@ -969,6 +1062,7 @@ async function fetchGames(sport) {
   } catch {
     games = FALLBACK_GAMES[sport] || [];
   }
+  games = await enrichGamesWithOdds(games, sport);
   state.allGames = games;
   updateSeeAll();
   renderGames(games, sport);
@@ -1140,9 +1234,10 @@ function renderGdBody() {
     body.innerHTML = `<div class="gd-section-title">Props</div>` +
       props.map((prop, idx) => {
         const seed = strHash(game.id + prop);
-        const line = gdLine(seed, game.sport, idx);
-        const overOdds = deterministicOdds(seed);
-        const underOdds = deterministicOdds(strHash(game.id + prop + 'u'));
+        const isTotal = idx === 0;
+        const line = isTotal && game.totalLine != null ? game.totalLine : gdLine(seed, game.sport, idx);
+        const overOdds  = isTotal && game.overOdds  ? game.overOdds  : deterministicOdds(seed);
+        const underOdds = isTotal && game.underOdds ? game.underOdds : deterministicOdds(strHash(game.id + prop + 'u'));
         const overId = game.id+'-'+prop+'-o', underId = game.id+'-'+prop+'-u';
         const overSel = state.betSlip.some(b => b.id === overId);
         const underSel = state.betSlip.some(b => b.id === underId);
@@ -1161,15 +1256,17 @@ function renderGdBody() {
   } else if (tab === 'SPREADS') {
     body.innerHTML = `<div class="gd-section-title">Spreads</div>` +
       game.teams.map((t, i) => {
-        const spreadSeed = strHash(game.id + t.abbr + 'spd');
-        const spreadVal = ((spreadSeed % 14) + 1) + 0.5;
-        const spreadOdds = deterministicOdds(spreadSeed);
+        const isAway = i === 0;
+        const spreadLine = isAway
+          ? (game.awaySpreadLine ?? (() => { const s2 = strHash(game.id+t.abbr+'spd'); const v=((s2%14)+1)+0.5; return parseInt(game.awayOdds)<0?'-'+v:'+'+v; })())
+          : (game.homeSpreadLine ?? (() => { const s2 = strHash(game.id+t.abbr+'spd'); const v=((s2%14)+1)+0.5; return parseInt(game.homeOdds)<0?'-'+v:'+'+v; })());
+        const spreadOdds = isAway
+          ? (game.awaySpreadOdds ?? deterministicOdds(strHash(game.id+t.abbr+'spd')))
+          : (game.homeSpreadOdds ?? deterministicOdds(strHash(game.id+t.abbr+'spd')));
         const id = game.id+'-'+t.abbr+'-spd';
         const sel = state.betSlip.some(b => b.id === id);
-        const isFav = parseInt(i === 0 ? game.awayOdds : game.homeOdds) < 0;
-        const sign = isFav ? '-' + spreadVal : '+' + spreadVal;
         return `<div class="gd-prop-row${sel?' sel':''}" onclick="gdToggleBet('${id}','${game.id}','${t.abbr}','${game.teams[1-i].abbr}','${spreadOdds}','${game.sport}')">
-          <span class="gd-prop-label">${t.abbr} ${sign}</span>
+          <span class="gd-prop-label">${t.abbr} ${spreadLine}</span>
           <span class="gd-prop-odds">${locked ? '—' : spreadOdds}</span>
         </div>`;
       }).join('');
