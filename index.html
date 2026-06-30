@@ -14,7 +14,7 @@
   #app { width: 375px; min-height: 100vh; position: relative; overflow: hidden; background: #030310; }
   @media (max-width: 375px) { #app { width: 100%; } }
 
-  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: #030310; transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease; will-change: transform, opacity; }
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: rgba(3,3,16,0.87); transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease; will-change: transform, opacity; }
   .screen.hidden-left  { transform: translateX(-100%); opacity: 0; pointer-events: none; }
   .screen.hidden-right { transform: translateX(100%);  opacity: 0; pointer-events: none; }
 
@@ -280,7 +280,7 @@
   /* BG ANIMATION */
   #bg-anim { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
   .bg-rows { position:absolute; top:-20%; left:-25%; right:-25%; bottom:-20%; transform:rotate(-10deg); display:flex; flex-direction:column; gap:0; }
-  .bg-row { white-space:nowrap; padding:9px 0; font-family:'Space Mono',monospace; font-size:10px; color:rgba(0,240,245,0.07); letter-spacing:.04em; }
+  .bg-row { white-space:nowrap; padding:9px 0; font-family:'Space Mono',monospace; font-size:10px; color:rgba(0,240,245,0.13); letter-spacing:.04em; }
   .bg-row.go-l { animation:odds-go-l 22s linear infinite; }
   .bg-row.go-r { animation:odds-go-r 26s linear infinite; }
   .money-layer { position:absolute; inset:0; }
@@ -694,12 +694,12 @@
     </div>
     <div class="scroll-area">
       <div class="profile-block">
-        <div class="profile-avatar">JD</div>
+        <div class="profile-avatar" id="profile-avatar">JD</div>
         <div>
-          <div class="profile-name">Jordan Diaz</div>
+          <div class="profile-name" id="profile-name">—</div>
           <div class="profile-row">
-            <span class="profile-handle">@jdiaz</span>
-            <span class="vip-badge">VIP · TIER 3</span>
+            <span class="profile-handle" id="profile-handle">@—</span>
+            <span class="vip-badge" id="profile-vip">VIP · TIER 1</span>
           </div>
         </div>
       </div>
@@ -716,7 +716,7 @@
         <div class="win-bar-bg"><div class="win-bar-fill" id="win-bar" style="width:61%"></div></div>
         <div class="record-footer">
           <span class="record-footer-item" id="wins-label">142W</span>
-          <span class="record-net">Net <span class="net-green">+$1,284</span> lifetime</span>
+          <span class="record-net">Net <span id="net-lifetime">+$0</span> lifetime</span>
           <span class="record-footer-item" id="losses-label">89L</span>
         </div>
       </div>
@@ -1609,17 +1609,29 @@ function placeSlip() {
 
   const payout = calcPayout(stakeNum, state.betSlip);
   const combinedOdds = calcCombinedOdds(state.betSlip);
-  state.placedBets.push({
+  const bet = {
     id: Date.now().toString(),
     legs: [...state.betSlip],
     stake: stakeNum,
-    payout,
+    toWin: payout,
     combinedOdds,
     status: 'pending',
     placedAt: Date.now(),
-  });
+  };
+  state.placedBets.push(bet);
 
   state.promoCash = Math.max(0, state.promoCash - stakeNum);
+  // Persist updated balance back to user account in localStorage
+  if (state.currentUser) {
+    const accounts = getAccounts();
+    const idx = accounts.findIndex(a => a.id === state.currentUser.id);
+    if (idx >= 0) {
+      accounts[idx].balance = state.promoCash;
+      accounts[idx].bets = (accounts[idx].bets || 0) + 1;
+      saveAccounts(accounts);
+      state.currentUser = accounts[idx];
+    }
+  }
   updateBalances();
   stakeEl.value = '';
   document.getElementById('payout-amt').textContent = '—';
@@ -1872,14 +1884,49 @@ document.getElementById('friend-input').addEventListener('keydown', e => { if (e
 
 // ─── Account render ───────────────────────────────────────────────────────────
 function renderAccount() {
-  const total = state.wins + state.losses;
-  const wr    = total ? Math.round(state.wins / total * 100) : 0;
-  document.getElementById('wins-num').textContent    = state.wins;
-  document.getElementById('losses-num').textContent  = state.losses;
+  const user = state.currentUser;
+
+  // Profile identity
+  if (user) {
+    document.getElementById('profile-avatar').textContent = user.initials || '??';
+    document.getElementById('profile-name').textContent   = user.name || 'Unknown';
+    const handle = '@' + (user.username || user.email?.split('@')[0] || 'user');
+    document.getElementById('profile-handle').textContent = handle;
+    // VIP tier based on total bets placed
+    const totalBets = (user.bets || 0) + state.placedBets.length;
+    const tier = totalBets >= 500 ? 5 : totalBets >= 200 ? 4 : totalBets >= 100 ? 3 : totalBets >= 25 ? 2 : 1;
+    document.getElementById('profile-vip').textContent = `VIP · TIER ${tier}`;
+  }
+
+  // Stats: start from user's stored record + any new bets this session
+  const sessionWins   = state.placedBets.filter(b => b.result === 'won').length;
+  const sessionLosses = state.placedBets.filter(b => b.result === 'lost').length;
+  const wins   = (user?.wins   || 0) + sessionWins;
+  const losses = (user?.losses || 0) + sessionLosses;
+  const total  = wins + losses;
+  const wr     = total ? Math.round(wins / total * 100) : 0;
+
+  // Net lifetime from placed bets
+  const netSession = state.placedBets.reduce((sum, b) => {
+    const stake = parseFloat(b.stake) || 0;
+    if (b.result === 'won') return sum + (parseFloat(b.toWin) - stake || 0);
+    if (b.result === 'lost') return sum - stake;
+    return sum;
+  }, 0);
+  const netEl = document.getElementById('net-lifetime');
+  if (netEl) {
+    const netStr = netSession >= 0 ? '+' + money(netSession) : '-' + money(Math.abs(netSession));
+    netEl.textContent = netStr;
+    netEl.className = netSession >= 0 ? 'net-green' : '';
+    netEl.style.color = netSession >= 0 ? '#00e676' : '#ff2952';
+  }
+
+  document.getElementById('wins-num').textContent    = wins;
+  document.getElementById('losses-num').textContent  = losses;
   document.getElementById('win-rate').textContent    = wr + '%';
   document.getElementById('win-bar').style.width     = wr + '%';
-  document.getElementById('wins-label').textContent  = state.wins + 'W';
-  document.getElementById('losses-label').textContent = state.losses + 'L';
+  document.getElementById('wins-label').textContent  = wins + 'W';
+  document.getElementById('losses-label').textContent = losses + 'L';
   document.getElementById('total-bets').textContent  = total + ' settled';
   document.getElementById('promo-cash').textContent  = money(state.promoCash);
   document.getElementById('gems-count').textContent  = state.gems.toLocaleString('en-US');
@@ -1934,17 +1981,22 @@ function adminAccess() {
 }
 
 function initMainApp() {
+  const user = state.currentUser;
+  if (user) {
+    // Load user's balance and stats into live state
+    state.promoCash = user.balance ?? 1000;
+    state.gems      = user.gems    ?? 0;
+    state.wins      = user.wins    ?? 0;
+    state.losses    = user.losses  ?? 0;
+    state.placedBets = [];  // fresh session; history tied to account
+    document.getElementById('home-avatar').textContent = user.initials;
+    document.getElementById('live-avatar').textContent = user.initials;
+  }
   updateBalances();
   renderPacks();
   renderFriends();
   fetchGames('NBA');
   renderForYou();
-  // Update avatar
-  if (state.currentUser) {
-    const name = state.currentUser.name;
-    document.getElementById('home-avatar').textContent = state.currentUser.initials;
-    document.getElementById('live-avatar').textContent = state.currentUser.initials;
-  }
 }
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
