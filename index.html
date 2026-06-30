@@ -1563,13 +1563,14 @@ function calcPayout(stakeAmt, bets) {
   if (!stakeAmt || bets.length === 0) return 0;
   if (bets.length === 1) {
     const o = parseInt(bets[0].odds);
-    return o > 0 ? stakeAmt * (o / 100) : stakeAmt * (100 / Math.abs(o));
+    const profit = o > 0 ? stakeAmt * (o / 100) : stakeAmt * (100 / Math.abs(o));
+    return stakeAmt + profit;
   }
   const mult = bets.reduce((acc, b) => {
     const o = parseInt(b.odds);
     return acc * (o > 0 ? 1 + o / 100 : 1 + 100 / Math.abs(o));
   }, 1);
-  return stakeAmt * mult - stakeAmt;
+  return stakeAmt * mult;
 }
 
 function updatePayout() {
