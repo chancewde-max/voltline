@@ -18,43 +18,11 @@ const ESPN_URLS = {
   'World Cup': 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
 };
 
-const ODDS_SPORT_KEYS = {
-  NBA: 'basketball_nba', NFL: 'americanfootball_nfl', MLB: 'baseball_mlb', NHL: 'icehockey_nhl',
-};
-
-const TEAM_ABBR = {
-  'Atlanta Hawks':'ATL','Boston Celtics':'BOS','Brooklyn Nets':'BKN','Charlotte Hornets':'CHA',
-  'Chicago Bulls':'CHI','Cleveland Cavaliers':'CLE','Dallas Mavericks':'DAL','Denver Nuggets':'DEN',
-  'Detroit Pistons':'DET','Golden State Warriors':'GSW','Houston Rockets':'HOU','Indiana Pacers':'IND',
-  'Los Angeles Clippers':'LAC','Los Angeles Lakers':'LAL','Memphis Grizzlies':'MEM','Miami Heat':'MIA',
-  'Milwaukee Bucks':'MIL','Minnesota Timberwolves':'MIN','New Orleans Pelicans':'NOP','New York Knicks':'NYK',
-  'Oklahoma City Thunder':'OKC','Orlando Magic':'ORL','Philadelphia 76ers':'PHI','Phoenix Suns':'PHX',
-  'Portland Trail Blazers':'POR','Sacramento Kings':'SAC','San Antonio Spurs':'SAS','Toronto Raptors':'TOR',
-  'Utah Jazz':'UTA','Washington Wizards':'WAS',
-  'Arizona Cardinals':'ARI','Atlanta Falcons':'ATL','Baltimore Ravens':'BAL','Buffalo Bills':'BUF',
-  'Carolina Panthers':'CAR','Chicago Bears':'CHI','Cincinnati Bengals':'CIN','Cleveland Browns':'CLE',
-  'Dallas Cowboys':'DAL','Denver Broncos':'DEN','Detroit Lions':'DET','Green Bay Packers':'GB',
-  'Houston Texans':'HOU','Indianapolis Colts':'IND','Jacksonville Jaguars':'JAX','Kansas City Chiefs':'KC',
-  'Las Vegas Raiders':'LV','Los Angeles Chargers':'LAC','Los Angeles Rams':'LAR','Miami Dolphins':'MIA',
-  'Minnesota Vikings':'MIN','New England Patriots':'NE','New Orleans Saints':'NO','New York Giants':'NYG',
-  'New York Jets':'NYJ','Philadelphia Eagles':'PHI','Pittsburgh Steelers':'PIT','San Francisco 49ers':'SF',
-  'Seattle Seahawks':'SEA','Tampa Bay Buccaneers':'TB','Tennessee Titans':'TEN','Washington Commanders':'WSH',
-  'Arizona Diamondbacks':'ARI','Atlanta Braves':'ATL','Baltimore Orioles':'BAL','Boston Red Sox':'BOS',
-  'Chicago Cubs':'CHC','Chicago White Sox':'CWS','Cincinnati Reds':'CIN','Cleveland Guardians':'CLE',
-  'Colorado Rockies':'COL','Detroit Tigers':'DET','Houston Astros':'HOU','Kansas City Royals':'KC',
-  'Los Angeles Angels':'LAA','Los Angeles Dodgers':'LAD','Miami Marlins':'MIA','Milwaukee Brewers':'MIL',
-  'Minnesota Twins':'MIN','New York Mets':'NYM','New York Yankees':'NYY','Oakland Athletics':'OAK',
-  'Philadelphia Phillies':'PHI','Pittsburgh Pirates':'PIT','San Diego Padres':'SD','San Francisco Giants':'SF',
-  'Seattle Mariners':'SEA','St. Louis Cardinals':'STL','Tampa Bay Rays':'TB','Texas Rangers':'TEX',
-  'Toronto Blue Jays':'TOR','Washington Nationals':'WSH',
-  'Anaheim Ducks':'ANA','Boston Bruins':'BOS','Buffalo Sabres':'BUF','Calgary Flames':'CGY',
-  'Carolina Hurricanes':'CAR','Chicago Blackhawks':'CHI','Colorado Avalanche':'COL','Columbus Blue Jackets':'CBJ',
-  'Dallas Stars':'DAL','Detroit Red Wings':'DET','Edmonton Oilers':'EDM','Florida Panthers':'FLA',
-  'Los Angeles Kings':'LAK','Minnesota Wild':'MIN','Montreal Canadiens':'MTL','Nashville Predators':'NSH',
-  'New Jersey Devils':'NJD','New York Islanders':'NYI','New York Rangers':'NYR','Ottawa Senators':'OTT',
-  'Philadelphia Flyers':'PHI','Pittsburgh Penguins':'PIT','San Jose Sharks':'SJS','Seattle Kraken':'SEA',
-  'St. Louis Blues':'STL','Tampa Bay Lightning':'TBL','Toronto Maple Leafs':'TOR','Utah Hockey Club':'UTA',
-  'Vancouver Canucks':'VAN','Vegas Golden Knights':'VGK','Washington Capitals':'WSH','Winnipeg Jets':'WPG',
+// Client tab labels → sportsgameodds.com leagueID.
+// Aliases let both 'Soccer' (client tab) and specific leagues work.
+const SGO_LEAGUE_MAP = {
+  NBA: 'NBA', NFL: 'NFL', MLB: 'MLB', NHL: 'NHL', MLS: 'MLS', EPL: 'EPL',
+  Soccer: 'EPL', UFC: 'UFC', 'World Cup': 'FIFA_WORLD_CUP',
 };
 
 // Canonical pack pricing — the client only ever sends a packId, never an amount,
@@ -204,41 +172,63 @@ async function fetchEspnEvents(sport) {
   }
 }
 
-// ─── Odds proxy (hides the-odds-api key from the client) ───────────────────
+// ─── Odds proxy (hides sportsgameodds.com key from the client) ─────────────
 
-function fmtOdds(p) { return p > 0 ? '+' + p : '' + p; }
+function fmtOdds(v) {
+  if (v == null) return null;
+  const s = String(v).trim();
+  if (!s) return null;
+  if (s[0] === '+' || s[0] === '-') return s;
+  const n = parseFloat(s);
+  if (Number.isNaN(n)) return null;
+  return n > 0 ? '+' + Math.round(n) : '' + Math.round(n);
+}
+function fmtLine(v) {
+  if (v == null || v === '') return null;
+  const n = parseFloat(v);
+  return Number.isNaN(n) ? null : n;
+}
+function fmtSpread(v) {
+  const n = fmtLine(v);
+  if (n == null) return null;
+  return n > 0 ? '+' + n : '' + n;
+}
+function pickOdds(o) { return o ? (o.bookOdds || o.fairOdds) : null; }
+function pickLine(o) { return o ? (o.bookOverUnder || o.fairOverUnder) : null; }
 
 function buildOddsMap(events) {
   const map = {};
   for (const ev of events) {
-    const awayAbbr = TEAM_ABBR[ev.away_team], homeAbbr = TEAM_ABBR[ev.home_team];
+    const awayAbbr = ev.teams?.away?.names?.short;
+    const homeAbbr = ev.teams?.home?.names?.short;
     if (!awayAbbr || !homeAbbr) continue;
-    const bk = ev.bookmakers?.[0];
-    if (!bk) continue;
-    const h2h = bk.markets?.find(m => m.key === 'h2h');
-    const spr = bk.markets?.find(m => m.key === 'spreads');
-    const tot = bk.markets?.find(m => m.key === 'totals');
+    const odds = ev.odds || {};
     const entry = {};
-    if (h2h) {
-      const a = h2h.outcomes.find(o => TEAM_ABBR[o.name] === awayAbbr);
-      const h = h2h.outcomes.find(o => TEAM_ABBR[o.name] === homeAbbr);
-      if (a && h) { entry.awayOdds = fmtOdds(a.price); entry.homeOdds = fmtOdds(h.price); }
+
+    const homeMl = fmtOdds(pickOdds(odds['points-home-game-ml-home']));
+    const awayMl = fmtOdds(pickOdds(odds['points-away-game-ml-away']));
+    if (homeMl && awayMl) { entry.homeOdds = homeMl; entry.awayOdds = awayMl; }
+
+    const homeSp = odds['points-home-game-sp-home'];
+    const awaySp = odds['points-away-game-sp-away'];
+    const homeSpOdds = fmtOdds(pickOdds(homeSp));
+    const awaySpOdds = fmtOdds(pickOdds(awaySp));
+    const homeSpLine = fmtSpread(pickLine(homeSp));
+    const awaySpLine = fmtSpread(pickLine(awaySp));
+    if (homeSpOdds && awaySpOdds && homeSpLine !== null && awaySpLine !== null) {
+      entry.homeSpreadLine = homeSpLine; entry.homeSpreadOdds = homeSpOdds;
+      entry.awaySpreadLine = awaySpLine; entry.awaySpreadOdds = awaySpOdds;
     }
-    if (spr) {
-      const a = spr.outcomes.find(o => TEAM_ABBR[o.name] === awayAbbr);
-      const h = spr.outcomes.find(o => TEAM_ABBR[o.name] === homeAbbr);
-      if (a && h) {
-        entry.awaySpreadLine = a.point > 0 ? '+' + a.point : '' + a.point;
-        entry.awaySpreadOdds = fmtOdds(a.price);
-        entry.homeSpreadLine = h.point > 0 ? '+' + h.point : '' + h.point;
-        entry.homeSpreadOdds = fmtOdds(h.price);
-      }
+
+    const over = odds['points-all-game-ou-over'];
+    const under = odds['points-all-game-ou-under'];
+    const overOdds = fmtOdds(pickOdds(over));
+    const underOdds = fmtOdds(pickOdds(under));
+    const totalLine = fmtLine(pickLine(over));
+    if (overOdds && underOdds && totalLine !== null) {
+      entry.totalLine = totalLine; entry.overOdds = overOdds; entry.underOdds = underOdds;
     }
-    if (tot) {
-      const o = tot.outcomes.find(o => o.name === 'Over');
-      const u = tot.outcomes.find(o => o.name === 'Under');
-      if (o && u) { entry.totalLine = o.point; entry.overOdds = fmtOdds(o.price); entry.underOdds = fmtOdds(u.price); }
-    }
+
     map[awayAbbr + '-' + homeAbbr] = entry;
   }
   return map;
@@ -248,20 +238,20 @@ async function getOddsMap(env, sport, debug = false) {
   const cacheKey = `oddscache:${sport}`;
   const cached = await env.VOLTLINE_KV.get(cacheKey, 'json');
   if (cached) return debug ? { map: cached, debug: { source: 'cache' } } : cached;
-  const sportKey = ODDS_SPORT_KEYS[sport] || ODDS_SPORT_KEYS[sport.toUpperCase()];
-  if (!sportKey) return debug ? { map: {}, debug: { reason: 'unknown_sport', sport } } : {};
+  const leagueID = SGO_LEAGUE_MAP[sport] || SGO_LEAGUE_MAP[sport.toUpperCase()] || sport.toUpperCase();
   if (!env.ODDS_API_KEY) return debug ? { map: {}, debug: { reason: 'missing_ODDS_API_KEY_secret' } } : {};
   try {
-    const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${env.ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`;
+    const url = `https://api.sportsgameodds.com/v2/events?apiKey=${env.ODDS_API_KEY}&leagueID=${encodeURIComponent(leagueID)}&oddsAvailable=true`;
     const resp = await fetch(url);
     const status = resp.status;
-    const data = await resp.json().catch(() => null);
+    const body = await resp.json().catch(() => null);
+    const data = body?.data;
     if (!Array.isArray(data)) {
-      return debug ? { map: {}, debug: { reason: 'non_array_response', status, body: data } } : {};
+      return debug ? { map: {}, debug: { reason: 'non_array_data', status, body } } : {};
     }
     const map = buildOddsMap(data);
     await env.VOLTLINE_KV.put(cacheKey, JSON.stringify(map), { expirationTtl: ODDS_CACHE_TTL });
-    return debug ? { map, debug: { source: 'live', status, count: data.length } } : map;
+    return debug ? { map, debug: { source: 'live', status, leagueID, count: data.length, filled: Object.keys(map).length } } : map;
   } catch (e) {
     return debug ? { map: {}, debug: { reason: 'fetch_threw', message: String(e) } } : {};
   }
