@@ -35,14 +35,14 @@ npx wrangler secret put ADMIN_PASSWORD   # whatever you want the admin password 
 npx wrangler deploy
 ```
 
-This prints your Worker's URL, e.g. `https://voltline-api.<your-subdomain>.workers.dev`.
+This prints your Worker's URL, e.g. `https://voltline.<your-subdomain>.workers.dev`.
 
 ## Wire up the frontend
 
 Open `index.html` and set:
 
 ```js
-const API_BASE = 'https://voltline-api.<your-subdomain>.workers.dev';
+const API_BASE = 'https://voltline.<your-subdomain>.workers.dev';
 ```
 
 Then push `index.html` to whatever branch GitHub Pages serves. No other
