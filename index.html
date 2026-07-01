@@ -317,6 +317,13 @@
   .checkout-input:focus { border-color:rgba(0,240,245,.4); background:rgba(0,240,245,.03); }
   .checkout-row { display:flex; gap:10px; }
   .checkout-row .checkout-field { flex:1; }
+  .pay-options { display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
+  .pay-option { display:flex; align-items:center; gap:12px; padding:13px 14px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:11px; cursor:pointer; transition:all .15s; }
+  .pay-option:has(input:checked) { border-color:#00c0c8; background:rgba(0,192,200,.07); box-shadow:0 0 0 1px rgba(0,192,200,.35), 0 0 22px rgba(0,192,200,.14); }
+  .pay-option input { accent-color:#00c0c8; width:16px; height:16px; }
+  .pay-option-body { flex:1; }
+  .pay-option-title { font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; color:white; }
+  .pay-option-sub { font-family:'Space Mono',monospace; font-size:9px; color:#5a6a8a; margin-top:2px; letter-spacing:.4px; }
   .checkout-complete-btn { display:block; width:100%; margin-top:18px; padding:15px; background:linear-gradient(90deg,#00c0c8,#0050ff); border-radius:13px; text-align:center; font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:700; letter-spacing:.08em; color:white; cursor:pointer; transition:opacity .15s; box-shadow:0 4px 24px rgba(0,80,255,.35); }
   .checkout-complete-btn:active { opacity:.85; }
   .checkout-secure { text-align:center; margin-top:10px; font-family:'Space Mono',monospace; font-size:9px; color:#2a3a5a; letter-spacing:.5px; }
@@ -923,28 +930,33 @@
         <div class="checkout-sum-label" style="margin-top:10px">You Receive</div>
         <div class="checkout-sum-bonus" id="co-bonus">— Gems + $0.00 promo cash</div>
       </div>
-      <div class="checkout-form-title">Payment Details</div>
-      <div class="checkout-field">
-        <div class="checkout-label">Card Number</div>
-        <input class="checkout-input" id="co-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)">
-      </div>
-      <div class="checkout-row">
-        <div class="checkout-field">
-          <div class="checkout-label">Expiry</div>
-          <input class="checkout-input" id="co-exp" type="text" placeholder="MM / YY" maxlength="7" oninput="fmtExp(this)">
-        </div>
-        <div class="checkout-field">
-          <div class="checkout-label">CVV</div>
-          <input class="checkout-input" id="co-cvv" type="text" placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
-        </div>
-      </div>
-      <div class="checkout-field">
-        <div class="checkout-label">Name on Card</div>
-        <input class="checkout-input" id="co-name" type="text" placeholder="Jordan Diaz">
+      <div class="checkout-form-title">Choose Payment Method</div>
+      <div class="pay-options">
+        <label class="pay-option">
+          <input type="radio" name="pay-method" value="paysafe" checked>
+          <div class="pay-option-body">
+            <div class="pay-option-title">Credit / Debit Card</div>
+            <div class="pay-option-sub">Visa · Mastercard · Amex · Discover</div>
+          </div>
+        </label>
+        <label class="pay-option">
+          <input type="radio" name="pay-method" value="plaid">
+          <div class="pay-option-body">
+            <div class="pay-option-title">Bank Transfer (Plaid)</div>
+            <div class="pay-option-sub">Instant ACH from any US bank</div>
+          </div>
+        </label>
+        <label class="pay-option">
+          <input type="radio" name="pay-method" value="aeropay">
+          <div class="pay-option-body">
+            <div class="pay-option-title">Bank Transfer (Aeropay)</div>
+            <div class="pay-option-sub">Pay-by-bank, no card fees</div>
+          </div>
+        </label>
       </div>
       <div id="co-error" style="font-family:'Space Mono',monospace;font-size:10px;color:#ff2952;min-height:16px;margin-top:4px;text-align:center"></div>
-      <div class="checkout-complete-btn" onclick="completePurchase()">COMPLETE PURCHASE</div>
-      <div class="checkout-secure">🔒 256-bit SSL encrypted · Payments processed securely</div>
+      <div class="checkout-complete-btn" onclick="completePurchase()">CONTINUE</div>
+      <div class="checkout-secure">🔒 You'll be redirected to your chosen processor. VOLTLINE never sees your card or bank credentials.</div>
     </div>
   </div>
 
@@ -2083,53 +2095,74 @@ function goCheckout() {
 }
 
 async function completePurchase() {
-  const card = document.getElementById('co-card').value.replace(/\s/g,'');
-  const exp  = document.getElementById('co-exp').value;
-  const cvv  = document.getElementById('co-cvv').value;
-  const name = document.getElementById('co-name').value.trim();
   const errEl = document.getElementById('co-error');
-  if (card.length < 16) { errEl.textContent = 'Enter a valid card number.'; return; }
-  if (exp.length < 5)   { errEl.textContent = 'Enter a valid expiry date.'; return; }
-  if (cvv.length < 3)   { errEl.textContent = 'Enter a valid CVV.'; return; }
-  if (!name)            { errEl.textContent = 'Enter the name on your card.'; return; }
   errEl.textContent = '';
   const pack = state.pendingDeposit;
   if (!pack) return;
+  const selected = document.querySelector('input[name="pay-method"]:checked');
+  const provider = selected ? selected.value : 'paysafe';
   try {
-    // Try real Stripe checkout first; fall back to mock /api/me/deposit if not configured.
-    try {
-      const { url } = await api('/api/checkout/create', {
-        method: 'POST',
-        body: JSON.stringify({
-          packId: pack.id,
-          successUrl: location.origin + location.pathname + '?checkout=success',
-          cancelUrl: location.origin + location.pathname + '?checkout=cancel',
-        }),
-      });
-      window.location.href = url;
+    const resp = await api('/api/payments/create', {
+      method: 'POST',
+      body: JSON.stringify({ provider, packId: pack.id }),
+    });
+    if (provider === 'plaid') {
+      // Plaid returns a link_token; open Plaid Link, then hit /exchange with the public_token.
+      await openPlaidLink(resp.linkToken, resp.pendingId, pack);
       return;
-    } catch (stripeErr) {
-      if (!/not configured/i.test(stripeErr.message || '')) throw stripeErr;
-      const { account } = await api('/api/me/deposit', { method: 'POST', body: JSON.stringify({ packId: pack.id }) });
-      applyAccount(account);
     }
+    if (resp.url) { window.location.href = resp.url; return; }
+    throw new Error('Processor did not return a redirect URL.');
   } catch (e) {
+    // Fall back to mock deposit if no provider is configured yet (dev mode).
+    if (/not configured/i.test(e.message || '')) {
+      try {
+        const { account } = await api('/api/me/deposit', { method: 'POST', body: JSON.stringify({ packId: pack.id }) });
+        applyAccount(account);
+        updateBalances();
+        navigate('account');
+        showToast(`${pack.gems.toLocaleString()} Gems + ${money(pack.promo)} promo cash added! (dev mode)`);
+        return;
+      } catch (mockErr) {
+        errEl.textContent = mockErr.message || 'Could not complete purchase.';
+        return;
+      }
+    }
     errEl.textContent = e.message || 'Could not complete purchase.';
-    return;
   }
-  updateBalances();
-  navigate('account');
-  showToast(`${pack.gems.toLocaleString()} Gems + ${money(pack.promo)} promo cash added!`);
 }
 
-function fmtCard(el) {
-  let v = el.value.replace(/\D/g,'').slice(0,16);
-  el.value = v.replace(/(.{4})/g,'$1 ').trim();
-}
-function fmtExp(el) {
-  let v = el.value.replace(/\D/g,'').slice(0,4);
-  if (v.length >= 3) v = v.slice(0,2) + ' / ' + v.slice(2);
-  el.value = v;
+// Load Plaid Link SDK lazily, open the flow, then exchange the public_token.
+async function openPlaidLink(linkToken, pendingId, pack) {
+  if (!window.Plaid) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.plaid.com/link/v2/stable/link-initialize.js';
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Failed to load Plaid Link.'));
+      document.head.appendChild(s);
+    });
+  }
+  const handler = window.Plaid.create({
+    token: linkToken,
+    onSuccess: async (publicToken, metadata) => {
+      try {
+        const plaidAccountId = metadata?.accounts?.[0]?.id;
+        await api('/api/payments/plaid/exchange', {
+          method: 'POST',
+          body: JSON.stringify({ publicToken, plaidAccountId, pendingId }),
+        });
+        showToast(`Bank transfer initiated for ${money(pack.price)} — funds arrive shortly.`);
+        navigate('account');
+      } catch (e) {
+        document.getElementById('co-error').textContent = e.message || 'Bank transfer failed.';
+      }
+    },
+    onExit: (err) => {
+      if (err) document.getElementById('co-error').textContent = err.display_message || err.error_message || 'Bank link cancelled.';
+    },
+  });
+  handler.open();
 }
 
 let toastTimer = null;

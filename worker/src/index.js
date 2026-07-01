@@ -510,11 +510,12 @@ async function handleRedeem(request, env) {
   return json(request, { account: accountForClient(account), redeemed: cleared, redemption });
 }
 
-// Mock deposit — for dev only. Real deposits go through /api/checkout/create.
+// Mock deposit — for dev only. Real deposits go through /api/payments/create.
 async function handleDeposit(request, env) {
   const account = await getAccountFromRequest(request, env);
   if (!account) return errJson(request, 'Not authenticated.', 401);
-  if (env.STRIPE_SECRET_KEY) return errJson(request, 'Use /api/checkout/create for real payments.', 400);
+  const anyProviderConfigured = env.PLAID_CLIENT_ID || env.PAYSAFE_API_USER || env.AEROPAY_API_KEY;
+  if (anyProviderConfigured) return errJson(request, 'Use /api/payments/create for real payments.', 400);
   const { packId } = await readJsonBody(request);
   const pack = PACKS.find(p => p.id === packId);
   if (!pack) return errJson(request, 'Unknown pack.', 400);
@@ -524,88 +525,323 @@ async function handleDeposit(request, env) {
   return json(request, { account: accountForClient(account), pack });
 }
 
-// Stripe Checkout — creates a hosted checkout session and returns the URL to redirect to.
-async function handleCheckoutCreate(request, env) {
-  const account = await getAccountFromRequest(request, env);
-  if (!account) return errJson(request, 'Not authenticated.', 401);
-  if (!env.STRIPE_SECRET_KEY) return errJson(request, 'Stripe not configured.', 503);
+// ─── Payment providers (deposits) ────────────────────────────────────────────
+//
+// Three providers, all activated by their own set of secrets. If a provider's
+// secrets are missing, its route returns 503 so the frontend can fall back.
+//
+// All providers converge on the same shape:
+//   POST /api/payments/create  { provider, packId }  → { url?, linkToken?, ... }
+//   POST /api/payments/:provider/webhook            → verifies signature, credits pack
+//
+// Every successful credit goes through creditPack() so playthrough tracking,
+// balances, and gems are updated identically regardless of processor.
 
-  const { packId, successUrl, cancelUrl } = await readJsonBody(request);
-  const pack = PACKS.find(p => p.id === packId);
-  if (!pack) return errJson(request, 'Unknown pack.', 400);
-
-  const params = new URLSearchParams();
-  params.append('mode', 'payment');
-  params.append('success_url', successUrl || 'https://chancewde-max.github.io/voltline/?checkout=success');
-  params.append('cancel_url', cancelUrl || 'https://chancewde-max.github.io/voltline/?checkout=cancel');
-  params.append('client_reference_id', account.id);
-  params.append('metadata[packId]', pack.id);
-  params.append('metadata[accountId]', account.id);
-  params.append('line_items[0][quantity]', '1');
-  params.append('line_items[0][price_data][currency]', 'usd');
-  params.append('line_items[0][price_data][unit_amount]', String(Math.round(pack.price * 100)));
-  params.append('line_items[0][price_data][product_data][name]', pack.name);
-
-  const resp = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: params.toString(),
-  });
-  const body = await resp.json().catch(() => null);
-  if (!resp.ok) {
-    return errJson(request, 'Stripe error: ' + (body?.error?.message || resp.status), 502);
-  }
-  return json(request, { url: body.url, id: body.id });
+async function idempotentCredit(env, dedupeKey, accountId, pack) {
+  const already = await env.VOLTLINE_KV.get(dedupeKey);
+  if (already) return { duplicate: true };
+  const account = await getAccount(env, accountId);
+  if (!account) return { ignored: 'account_not_found' };
+  await creditPack(env, account, pack);
+  await env.VOLTLINE_KV.put(dedupeKey, '1', { expirationTtl: 60 * 60 * 24 * 90 });
+  return { credited: true };
 }
 
-// Stripe → us: verify signature (t=,v1=) and credit the pack on checkout.session.completed.
-async function verifyStripeSignature(payload, sigHeader, secret) {
-  if (!sigHeader) return false;
-  const parts = Object.fromEntries(sigHeader.split(',').map(p => {
-    const i = p.indexOf('=');
-    return [p.slice(0, i), p.slice(i + 1)];
-  }));
-  if (!parts.t || !parts.v1) return false;
-  const signedPayload = `${parts.t}.${payload}`;
+function paymentSuccessUrl(request, provider) {
+  const origin = 'https://chancewde-max.github.io/voltline';
+  return `${origin}/?deposit=${provider}_success`;
+}
+function paymentCancelUrl() {
+  return 'https://chancewde-max.github.io/voltline/?deposit=cancel';
+}
+
+// Dispatcher: frontend calls /api/payments/create with a provider name.
+async function handlePaymentCreate(request, env) {
+  const account = await getAccountFromRequest(request, env);
+  if (!account) return errJson(request, 'Not authenticated.', 401);
+  const { provider, packId } = await readJsonBody(request);
+  const pack = PACKS.find(p => p.id === packId);
+  if (!pack) return errJson(request, 'Unknown pack.', 400);
+  switch (provider) {
+    case 'plaid':   return await createPlaidPayment(request, env, account, pack);
+    case 'paysafe': return await createPaysafePayment(request, env, account, pack);
+    case 'aeropay': return await createAeropayPayment(request, env, account, pack);
+    default:        return errJson(request, 'Unknown payment provider.', 400);
+  }
+}
+
+// ─── Plaid (instant ACH via Plaid Transfer) ──────────────────────────────────
+//
+// Flow:
+//   1. Frontend calls this to get a link_token, then opens Plaid Link with it.
+//   2. Plaid Link returns a public_token → frontend hits /api/payments/plaid/exchange.
+//   3. We exchange for an access_token, create an authorization + transfer.
+//   4. Plaid webhook fires TRANSFER_EVENTS_UPDATE when settled → we credit the pack.
+
+const PLAID_BASE = (env) => env.PLAID_ENV === 'production'
+  ? 'https://production.plaid.com'
+  : env.PLAID_ENV === 'development'
+    ? 'https://development.plaid.com'
+    : 'https://sandbox.plaid.com';
+
+async function plaidCall(env, path, body) {
+  const resp = await fetch(`${PLAID_BASE(env)}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: env.PLAID_CLIENT_ID, secret: env.PLAID_SECRET, ...body }),
+  });
+  const data = await resp.json().catch(() => null);
+  if (!resp.ok) throw new Error(data?.error_message || `Plaid ${resp.status}`);
+  return data;
+}
+
+async function createPlaidPayment(request, env, account, pack) {
+  if (!env.PLAID_CLIENT_ID || !env.PLAID_SECRET) {
+    return errJson(request, 'Plaid not configured.', 503);
+  }
+  try {
+    // Stash the pending pack so we know what to credit after Plaid Link completes.
+    const pendingId = 'plaid_pending_' + crypto.randomUUID();
+    await env.VOLTLINE_KV.put(
+      `plaid_pending:${pendingId}`,
+      JSON.stringify({ accountId: account.id, packId: pack.id, createdAt: Date.now() }),
+      { expirationTtl: 60 * 60 }
+    );
+    const data = await plaidCall(env, '/link/token/create', {
+      client_name: 'VOLTLINE',
+      user: { client_user_id: account.id },
+      products: ['transfer'],
+      country_codes: ['US'],
+      language: 'en',
+      transfer: { intent_id: pendingId }, // referenced by transfer/authorization/create later
+    });
+    return json(request, { provider: 'plaid', linkToken: data.link_token, pendingId });
+  } catch (e) {
+    return errJson(request, 'Plaid error: ' + e.message, 502);
+  }
+}
+
+// After Plaid Link resolves on the client, the client posts { publicToken, accountId, pendingId }.
+// We exchange, create the transfer authorization, and create the transfer.
+async function handlePlaidExchange(request, env) {
+  if (!env.PLAID_CLIENT_ID || !env.PLAID_SECRET) return errJson(request, 'Plaid not configured.', 503);
+  const acct = await getAccountFromRequest(request, env);
+  if (!acct) return errJson(request, 'Not authenticated.', 401);
+  const { publicToken, plaidAccountId, pendingId } = await readJsonBody(request);
+  const pending = await env.VOLTLINE_KV.get(`plaid_pending:${pendingId}`, 'json');
+  if (!pending || pending.accountId !== acct.id) return errJson(request, 'Unknown pending deposit.', 400);
+  const pack = PACKS.find(p => p.id === pending.packId);
+  if (!pack) return errJson(request, 'Unknown pack.', 400);
+  try {
+    const exch = await plaidCall(env, '/item/public_token/exchange', { public_token: publicToken });
+    const accessToken = exch.access_token;
+    const auth = await plaidCall(env, '/transfer/authorization/create', {
+      access_token: accessToken,
+      account_id: plaidAccountId,
+      type: 'debit',
+      network: 'ach',
+      amount: pack.price.toFixed(2),
+      ach_class: 'web',
+      user: { legal_name: acct.name || 'VOLTLINE User', email_address: acct.email },
+    });
+    if (auth.authorization?.decision !== 'approved') {
+      return errJson(request, 'Bank authorization declined.', 402);
+    }
+    const transfer = await plaidCall(env, '/transfer/create', {
+      access_token: accessToken,
+      account_id: plaidAccountId,
+      authorization_id: auth.authorization.id,
+      description: 'VOLTLINE ' + pack.name.slice(0, 15),
+    });
+    // Save mapping so the webhook can find the pack.
+    await env.VOLTLINE_KV.put(
+      `plaid_transfer:${transfer.transfer.id}`,
+      JSON.stringify({ accountId: acct.id, packId: pack.id, pendingId }),
+      { expirationTtl: 60 * 60 * 24 * 30 }
+    );
+    return json(request, { transferId: transfer.transfer.id, status: transfer.transfer.status });
+  } catch (e) {
+    return errJson(request, 'Plaid transfer failed: ' + e.message, 502);
+  }
+}
+
+// Plaid webhook: TRANSFER_EVENTS_UPDATE → sync events, credit on posted.
+async function handlePlaidWebhook(request, env) {
+  if (!env.PLAID_CLIENT_ID || !env.PLAID_SECRET) return errJson(request, 'Plaid not configured.', 503);
+  // NOTE: Plaid webhooks are verified via JWT in the 'Plaid-Verification' header;
+  // production must call /webhook_verification_key/get and verify. Stubbed here —
+  // add before going live.
+  const event = await request.json().catch(() => null);
+  if (event?.webhook_type === 'TRANSFER' && event.webhook_code === 'TRANSFER_EVENTS_UPDATE') {
+    const sync = await plaidCall(env, '/transfer/event/sync', { after_id: 0 });
+    for (const ev of (sync.transfer_events || [])) {
+      if (ev.event_type !== 'posted') continue;
+      const meta = await env.VOLTLINE_KV.get(`plaid_transfer:${ev.transfer_id}`, 'json');
+      if (!meta) continue;
+      const pack = PACKS.find(p => p.id === meta.packId);
+      if (!pack) continue;
+      await idempotentCredit(env, `plaid_credit:${ev.transfer_id}`, meta.accountId, pack);
+    }
+  }
+  return json(request, { received: true });
+}
+
+// ─── Paysafe (credit / debit cards, hosted checkout) ─────────────────────────
+//
+// Flow: create a Payment Handle on our side referencing the pack, then redirect
+// the user to Paysafe's hosted card page using the handle's redirect URL.
+// Webhook: PAYMENT_COMPLETED → credit pack. Signature is HMAC-SHA256 in
+// 'Signature' header per Paysafe docs.
+
+const PAYSAFE_BASE = (env) => env.PAYSAFE_ENV === 'production'
+  ? 'https://api.paysafe.com'
+  : 'https://api.test.paysafe.com';
+
+function paysafeAuthHeader(env) {
+  const raw = `${env.PAYSAFE_API_USER}:${env.PAYSAFE_API_PASSWORD}`;
+  return 'Basic ' + btoa(raw);
+}
+
+async function createPaysafePayment(request, env, account, pack) {
+  if (!env.PAYSAFE_ACCOUNT_ID || !env.PAYSAFE_API_USER || !env.PAYSAFE_API_PASSWORD) {
+    return errJson(request, 'Paysafe not configured.', 503);
+  }
+  const merchantRefNum = 'vl_' + crypto.randomUUID();
+  const body = {
+    merchantRefNum,
+    transactionType: 'PAYMENT',
+    paymentType: 'CARD',
+    amount: Math.round(pack.price * 100),
+    currencyCode: 'USD',
+    accountId: env.PAYSAFE_ACCOUNT_ID,
+    returnLinks: [
+      { rel: 'on_completed', href: paymentSuccessUrl(request, 'paysafe'), method: 'GET' },
+      { rel: 'on_failed',    href: paymentCancelUrl(),                     method: 'GET' },
+      { rel: 'on_cancelled', href: paymentCancelUrl(),                     method: 'GET' },
+    ],
+    merchantDescriptor: { dynamicDescriptor: 'VOLTLINE' },
+    profile: { email: account.email, firstName: (account.name || 'VOLTLINE').split(' ')[0] },
+  };
+  try {
+    const resp = await fetch(`${PAYSAFE_BASE(env)}/paymenthub/v1/paymenthandles`, {
+      method: 'POST',
+      headers: {
+        Authorization: paysafeAuthHeader(env),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok) return errJson(request, 'Paysafe error: ' + (data?.error?.message || resp.status), 502);
+    const redirect = (data.links || []).find(l => l.rel === 'redirect_payment');
+    if (!redirect) return errJson(request, 'Paysafe returned no redirect URL.', 502);
+    await env.VOLTLINE_KV.put(
+      `paysafe_ref:${merchantRefNum}`,
+      JSON.stringify({ accountId: account.id, packId: pack.id }),
+      { expirationTtl: 60 * 60 * 24 * 7 }
+    );
+    return json(request, { provider: 'paysafe', url: redirect.href, merchantRefNum });
+  } catch (e) {
+    return errJson(request, 'Paysafe request failed: ' + e.message, 502);
+  }
+}
+
+async function verifyPaysafeSignature(payload, sigHeader, secret) {
+  if (!sigHeader || !secret) return false;
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret),
     { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload));
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
   const hex = [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, '0')).join('');
-  return timingSafeEqual(hex, parts.v1);
+  return timingSafeEqual(hex, sigHeader.trim());
 }
 
-async function handleStripeWebhook(request, env) {
-  if (!env.STRIPE_WEBHOOK_SECRET) return errJson(request, 'Webhook secret not configured.', 503);
+async function handlePaysafeWebhook(request, env) {
+  if (!env.PAYSAFE_WEBHOOK_SECRET) return errJson(request, 'Paysafe webhook not configured.', 503);
   const payload = await request.text();
-  const sig = request.headers.get('Stripe-Signature') || '';
-  const ok = await verifyStripeSignature(payload, sig, env.STRIPE_WEBHOOK_SECRET);
-  if (!ok) return errJson(request, 'Invalid signature.', 400);
+  const sig = request.headers.get('Signature') || request.headers.get('X-Paysafe-Signature') || '';
+  if (!(await verifyPaysafeSignature(payload, sig, env.PAYSAFE_WEBHOOK_SECRET))) {
+    return errJson(request, 'Invalid signature.', 400);
+  }
+  const event = JSON.parse(payload);
+  const evType = event.eventType || event.event_type;
+  if (evType === 'PAYMENT_COMPLETED' || evType === 'PAYMENT_HANDLE_PAYABLE') {
+    const merchantRefNum = event.merchantRefNum || event.payload?.merchantRefNum;
+    const meta = merchantRefNum ? await env.VOLTLINE_KV.get(`paysafe_ref:${merchantRefNum}`, 'json') : null;
+    if (meta) {
+      const pack = PACKS.find(p => p.id === meta.packId);
+      if (pack) await idempotentCredit(env, `paysafe_credit:${merchantRefNum}`, meta.accountId, pack);
+    }
+  }
+  return json(request, { received: true });
+}
 
-  let event;
-  try { event = JSON.parse(payload); } catch { return errJson(request, 'Bad JSON.', 400); }
+// ─── Aeropay (instant ACH, hosted widget) ────────────────────────────────────
+//
+// Aeropay flow: create a transaction, get a checkout URL, redirect the user.
+// Their webhook fires transaction.completed → credit pack.
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data?.object || {};
-    const packId = session.metadata?.packId;
-    const accountId = session.metadata?.accountId || session.client_reference_id;
-    const pack = PACKS.find(p => p.id === packId);
-    if (!pack || !accountId) return json(request, { received: true, ignored: 'unknown_pack_or_account' });
+const AEROPAY_BASE = (env) => env.AEROPAY_ENV === 'production'
+  ? 'https://api.aeropay.com'
+  : 'https://sandbox-api.aeropay.com';
 
-    // Idempotency: don't credit the same Stripe session twice.
-    const dedupeKey = `stripe_session:${session.id}`;
-    const already = await env.VOLTLINE_KV.get(dedupeKey);
-    if (already) return json(request, { received: true, duplicate: true });
+async function createAeropayPayment(request, env, account, pack) {
+  if (!env.AEROPAY_API_KEY || !env.AEROPAY_MERCHANT_ID) {
+    return errJson(request, 'Aeropay not configured.', 503);
+  }
+  const externalId = 'vl_' + crypto.randomUUID();
+  const body = {
+    merchantId: env.AEROPAY_MERCHANT_ID,
+    externalId,
+    amount: Math.round(pack.price * 100),
+    currency: 'USD',
+    description: `VOLTLINE ${pack.name}`,
+    consumer: {
+      email: account.email,
+      firstName: (account.name || 'VOLTLINE').split(' ')[0],
+      lastName:  (account.name || 'User').split(' ').slice(1).join(' ') || 'User',
+    },
+    successUrl: paymentSuccessUrl(request, 'aeropay'),
+    cancelUrl: paymentCancelUrl(),
+  };
+  try {
+    const resp = await fetch(`${AEROPAY_BASE(env)}/v3/transactions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.AEROPAY_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok) return errJson(request, 'Aeropay error: ' + (data?.error?.message || resp.status), 502);
+    await env.VOLTLINE_KV.put(
+      `aeropay_ref:${externalId}`,
+      JSON.stringify({ accountId: account.id, packId: pack.id }),
+      { expirationTtl: 60 * 60 * 24 * 7 }
+    );
+    return json(request, { provider: 'aeropay', url: data.checkoutUrl || data.url, externalId });
+  } catch (e) {
+    return errJson(request, 'Aeropay request failed: ' + e.message, 502);
+  }
+}
 
-    const account = await getAccount(env, accountId);
-    if (!account) return json(request, { received: true, ignored: 'account_not_found' });
-
-    await creditPack(env, account, pack);
-    await env.VOLTLINE_KV.put(dedupeKey, '1', { expirationTtl: 60 * 60 * 24 * 90 });
+async function handleAeropayWebhook(request, env) {
+  if (!env.AEROPAY_WEBHOOK_SECRET) return errJson(request, 'Aeropay webhook not configured.', 503);
+  const payload = await request.text();
+  const sig = request.headers.get('X-Aeropay-Signature') || request.headers.get('Signature') || '';
+  if (!(await verifyPaysafeSignature(payload, sig, env.AEROPAY_WEBHOOK_SECRET))) {
+    return errJson(request, 'Invalid signature.', 400);
+  }
+  const event = JSON.parse(payload);
+  if (event.type === 'transaction.completed' || event.event === 'transaction.completed') {
+    const externalId = event.data?.externalId || event.transaction?.externalId;
+    const meta = externalId ? await env.VOLTLINE_KV.get(`aeropay_ref:${externalId}`, 'json') : null;
+    if (meta) {
+      const pack = PACKS.find(p => p.id === meta.packId);
+      if (pack) await idempotentCredit(env, `aeropay_credit:${externalId}`, meta.accountId, pack);
+    }
   }
   return json(request, { received: true });
 }
@@ -729,8 +965,11 @@ export default {
       if (pathname === '/api/me' && request.method === 'GET') return await handleMe(request, env);
       if (pathname === '/api/me/redeem' && request.method === 'POST') return await handleRedeem(request, env);
       if (pathname === '/api/me/deposit' && request.method === 'POST') return await handleDeposit(request, env);
-      if (pathname === '/api/checkout/create' && request.method === 'POST') return await handleCheckoutCreate(request, env);
-      if (pathname === '/api/stripe/webhook' && request.method === 'POST') return await handleStripeWebhook(request, env);
+      if (pathname === '/api/payments/create' && request.method === 'POST') return await handlePaymentCreate(request, env);
+      if (pathname === '/api/payments/plaid/exchange' && request.method === 'POST') return await handlePlaidExchange(request, env);
+      if (pathname === '/api/payments/plaid/webhook' && request.method === 'POST') return await handlePlaidWebhook(request, env);
+      if (pathname === '/api/payments/paysafe/webhook' && request.method === 'POST') return await handlePaysafeWebhook(request, env);
+      if (pathname === '/api/payments/aeropay/webhook' && request.method === 'POST') return await handleAeropayWebhook(request, env);
       if (pathname === '/api/bets' && request.method === 'GET') return await handleListBets(request, env);
       if (pathname === '/api/bets' && request.method === 'POST') return await handlePlaceBet(request, env);
       if (pathname === '/api/accounts/find' && request.method === 'GET') return await handleFindAccount(request, env, url);

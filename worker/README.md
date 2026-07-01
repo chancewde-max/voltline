@@ -28,9 +28,23 @@ npx wrangler kv namespace create VOLTLINE_KV
 npx wrangler secret put ODDS_API_KEY     # sportsgameodds.com key
 npx wrangler secret put ADMIN_PASSWORD   # whatever you want the admin password to be
 
-# Optional — real payments (Stripe Checkout). Without these, deposits use a mock flow.
-npx wrangler secret put STRIPE_SECRET_KEY       # sk_live_... or sk_test_...
-npx wrangler secret put STRIPE_WEBHOOK_SECRET   # whsec_... (from the endpoint you register in Stripe)
+# Optional — Paysafe (credit / debit cards, hosted page)
+npx wrangler secret put PAYSAFE_API_USER
+npx wrangler secret put PAYSAFE_API_PASSWORD
+npx wrangler secret put PAYSAFE_ACCOUNT_ID
+npx wrangler secret put PAYSAFE_WEBHOOK_SECRET
+# npx wrangler secret put PAYSAFE_ENV production   # omit or set 'test' for sandbox
+
+# Optional — Plaid (instant ACH via Plaid Transfer)
+npx wrangler secret put PLAID_CLIENT_ID
+npx wrangler secret put PLAID_SECRET
+# npx wrangler secret put PLAID_ENV sandbox|development|production  (default sandbox)
+
+# Optional — Aeropay (instant ACH via hosted checkout)
+npx wrangler secret put AEROPAY_API_KEY
+npx wrangler secret put AEROPAY_MERCHANT_ID
+npx wrangler secret put AEROPAY_WEBHOOK_SECRET
+# npx wrangler secret put AEROPAY_ENV production   # omit for sandbox
 
 # Optional — real payouts (Tremendous gift-card / ACH). Without these, redemption zeros balance only.
 npx wrangler secret put TREMENDOUS_API_KEY      # from tremendous.com dashboard
@@ -38,14 +52,15 @@ npx wrangler secret put TREMENDOUS_CAMPAIGN_ID  # the campaign that funds payout
 # npx wrangler secret put TREMENDOUS_SANDBOX 1  # set to "1" while testing against sandbox
 ```
 
-## Wire the Stripe webhook
+## Register the webhooks
 
-After deploying, register a Stripe webhook endpoint pointed at your Worker:
+After deploying, point each processor's webhook at your Worker:
 
-1. Stripe Dashboard → Developers → Webhooks → Add endpoint
-2. Endpoint URL: `https://voltline.<your-subdomain>.workers.dev/api/stripe/webhook`
-3. Events to send: `checkout.session.completed`
-4. Copy the **Signing secret** it shows (`whsec_...`) → paste into `STRIPE_WEBHOOK_SECRET`
+- **Paysafe:** merchant dashboard → Webhooks → `https://voltline.<sub>.workers.dev/api/payments/paysafe/webhook` → events `PAYMENT_COMPLETED`, `PAYMENT_HANDLE_PAYABLE` → copy the signing secret into `PAYSAFE_WEBHOOK_SECRET`.
+- **Plaid:** dashboard → Team Settings → Webhooks → `https://voltline.<sub>.workers.dev/api/payments/plaid/webhook`. Enable the `TRANSFER` webhook type.
+- **Aeropay:** dashboard → Developers → Webhooks → `https://voltline.<sub>.workers.dev/api/payments/aeropay/webhook` → event `transaction.completed` → copy the signing secret into `AEROPAY_WEBHOOK_SECRET`.
+
+Each provider's checkout/create route returns 503 "not configured" until its secrets are set; the frontend's payment picker will automatically fall back to a dev-mode mock deposit when none of the three are configured.
 
 ## Deploy
 
@@ -80,8 +95,11 @@ at the deployed Worker URL before pushing.
 ## Routes
 
 - `POST /api/signup` `{ name, email, password }`
-- `POST /api/checkout/create` `{ packId, successUrl?, cancelUrl? }` (Bearer token) — returns `{ url }` to redirect to Stripe Checkout
-- `POST /api/stripe/webhook` — signed by Stripe, credits packs on `checkout.session.completed`
+- `POST /api/payments/create` `{ provider, packId }` (Bearer token) — provider = `paysafe` | `plaid` | `aeropay`. Returns `{ url }` (Paysafe/Aeropay hosted redirect) or `{ linkToken, pendingId }` (Plaid, for Plaid Link).
+- `POST /api/payments/plaid/exchange` `{ publicToken, plaidAccountId, pendingId }` — called after Plaid Link resolves; creates the transfer authorization + transfer.
+- `POST /api/payments/paysafe/webhook` — signed by Paysafe (HMAC-SHA256).
+- `POST /api/payments/plaid/webhook` — Plaid TRANSFER_EVENTS_UPDATE.
+- `POST /api/payments/aeropay/webhook` — signed by Aeropay (HMAC-SHA256).
 - `POST /api/login` `{ identifier, password }`
 - `GET  /api/me` (Bearer token)
 - `POST /api/me/redeem` (Bearer token) — zeroes balance/playthrough
