@@ -25,9 +25,27 @@ npx wrangler login
 npx wrangler kv namespace create VOLTLINE_KV
 
 # Secrets (prompted interactively — never commit these)
-npx wrangler secret put ODDS_API_KEY     # your the-odds-api.com key
+npx wrangler secret put ODDS_API_KEY     # sportsgameodds.com key
 npx wrangler secret put ADMIN_PASSWORD   # whatever you want the admin password to be
+
+# Optional — real payments (Stripe Checkout). Without these, deposits use a mock flow.
+npx wrangler secret put STRIPE_SECRET_KEY       # sk_live_... or sk_test_...
+npx wrangler secret put STRIPE_WEBHOOK_SECRET   # whsec_... (from the endpoint you register in Stripe)
+
+# Optional — real payouts (Tremendous gift-card / ACH). Without these, redemption zeros balance only.
+npx wrangler secret put TREMENDOUS_API_KEY      # from tremendous.com dashboard
+npx wrangler secret put TREMENDOUS_CAMPAIGN_ID  # the campaign that funds payouts
+# npx wrangler secret put TREMENDOUS_SANDBOX 1  # set to "1" while testing against sandbox
 ```
+
+## Wire the Stripe webhook
+
+After deploying, register a Stripe webhook endpoint pointed at your Worker:
+
+1. Stripe Dashboard → Developers → Webhooks → Add endpoint
+2. Endpoint URL: `https://voltline.<your-subdomain>.workers.dev/api/stripe/webhook`
+3. Events to send: `checkout.session.completed`
+4. Copy the **Signing secret** it shows (`whsec_...`) → paste into `STRIPE_WEBHOOK_SECRET`
 
 ## Deploy
 
@@ -62,6 +80,8 @@ at the deployed Worker URL before pushing.
 ## Routes
 
 - `POST /api/signup` `{ name, email, password }`
+- `POST /api/checkout/create` `{ packId, successUrl?, cancelUrl? }` (Bearer token) — returns `{ url }` to redirect to Stripe Checkout
+- `POST /api/stripe/webhook` — signed by Stripe, credits packs on `checkout.session.completed`
 - `POST /api/login` `{ identifier, password }`
 - `GET  /api/me` (Bearer token)
 - `POST /api/me/redeem` (Bearer token) — zeroes balance/playthrough

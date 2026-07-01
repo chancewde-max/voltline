@@ -440,31 +440,174 @@ async function handleMe(request, env) {
   return json(request, { account: accountForClient(account) });
 }
 
-async function handleRedeem(request, env) {
-  const account = await getAccountFromRequest(request, env);
-  if (!account) return errJson(request, 'Not authenticated.', 401);
-  const amount = account.balance || 0;
-  account.balance = 0;
-  account.playthroughBatches = [];
-  await saveAccount(env, account);
-  return json(request, { account: accountForClient(account), redeemed: amount });
-}
-
-async function handleDeposit(request, env) {
-  const account = await getAccountFromRequest(request, env);
-  if (!account) return errJson(request, 'Not authenticated.', 401);
-  const { packId } = await readJsonBody(request);
-  const pack = PACKS.find(p => p.id === packId);
-  if (!pack) return errJson(request, 'Unknown pack.', 400);
-
+// Credit a pack to an account — shared by mock deposit and Stripe webhook.
+async function creditPack(env, account, pack) {
   account.balance = (account.balance || 0) + pack.promo;
   account.gems = (account.gems || 0) + pack.gems;
   const batch = { id: 'pt_' + Date.now(), label: pack.name, total: pack.promo, remaining: pack.promo };
   account.playthroughBatches = [...(account.playthroughBatches || []), batch];
   account.totalPlaythroughRequired = (account.totalPlaythroughRequired || 0) + pack.promo;
   await saveAccount(env, account);
+}
+
+async function handleRedeem(request, env) {
+  const account = await getAccountFromRequest(request, env);
+  if (!account) return errJson(request, 'Not authenticated.', 401);
+
+  const { email } = await readJsonBody(request);
+  const payoutEmail = (email || account.email || '').trim();
+  if (!payoutEmail) return errJson(request, 'Payout email required.', 400);
+
+  // Only playthrough-cleared balance is redeemable.
+  const batches = account.playthroughBatches || [];
+  const stillLocked = batches.reduce((s, b) => s + (b.remaining || 0), 0);
+  const cleared = Math.max(0, (account.balance || 0) - stillLocked);
+  if (cleared < 5) return errJson(request, 'Minimum redemption is $5 in cleared balance.', 400);
+
+  // If Tremendous isn't configured, fall back to mock behavior so dev keeps working.
+  if (!env.TREMENDOUS_API_KEY || !env.TREMENDOUS_CAMPAIGN_ID) {
+    account.balance = Math.max(0, (account.balance || 0) - cleared);
+    await saveAccount(env, account);
+    return json(request, { account: accountForClient(account), redeemed: cleared, mock: true });
+  }
+
+  const redemptionId = 'red_' + crypto.randomUUID();
+  const body = {
+    external_id: redemptionId,
+    reward: {
+      value: { denomination: Math.floor(cleared * 100) / 100, currency_code: 'USD' },
+      campaign_id: env.TREMENDOUS_CAMPAIGN_ID,
+      recipient: { email: payoutEmail, name: account.name || 'VOLTLINE User' },
+      delivery: { method: 'EMAIL' },
+    },
+  };
+  const base = env.TREMENDOUS_SANDBOX === '1'
+    ? 'https://testflight.tremendous.com/api/v2'
+    : 'https://api.tremendous.com/api/v2';
+  const resp = await fetch(`${base}/orders`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.TREMENDOUS_API_KEY}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  const respBody = await resp.json().catch(() => null);
+  if (!resp.ok) {
+    return errJson(request, 'Payout failed: ' + (respBody?.errors?.message || resp.status), 502);
+  }
+
+  account.balance = Math.max(0, (account.balance || 0) - cleared);
+  await saveAccount(env, account);
+
+  const redemption = {
+    id: redemptionId, accountId: account.id, amount: cleared, email: payoutEmail,
+    status: 'sent', createdAt: Date.now(), tremendousOrderId: respBody?.order?.id || null,
+  };
+  await env.VOLTLINE_KV.put(`redemption:${account.id}:${redemptionId}`, JSON.stringify(redemption));
+
+  return json(request, { account: accountForClient(account), redeemed: cleared, redemption });
+}
+
+// Mock deposit — for dev only. Real deposits go through /api/checkout/create.
+async function handleDeposit(request, env) {
+  const account = await getAccountFromRequest(request, env);
+  if (!account) return errJson(request, 'Not authenticated.', 401);
+  if (env.STRIPE_SECRET_KEY) return errJson(request, 'Use /api/checkout/create for real payments.', 400);
+  const { packId } = await readJsonBody(request);
+  const pack = PACKS.find(p => p.id === packId);
+  if (!pack) return errJson(request, 'Unknown pack.', 400);
+
+  await creditPack(env, account, pack);
 
   return json(request, { account: accountForClient(account), pack });
+}
+
+// Stripe Checkout — creates a hosted checkout session and returns the URL to redirect to.
+async function handleCheckoutCreate(request, env) {
+  const account = await getAccountFromRequest(request, env);
+  if (!account) return errJson(request, 'Not authenticated.', 401);
+  if (!env.STRIPE_SECRET_KEY) return errJson(request, 'Stripe not configured.', 503);
+
+  const { packId, successUrl, cancelUrl } = await readJsonBody(request);
+  const pack = PACKS.find(p => p.id === packId);
+  if (!pack) return errJson(request, 'Unknown pack.', 400);
+
+  const params = new URLSearchParams();
+  params.append('mode', 'payment');
+  params.append('success_url', successUrl || 'https://chancewde-max.github.io/voltline/?checkout=success');
+  params.append('cancel_url', cancelUrl || 'https://chancewde-max.github.io/voltline/?checkout=cancel');
+  params.append('client_reference_id', account.id);
+  params.append('metadata[packId]', pack.id);
+  params.append('metadata[accountId]', account.id);
+  params.append('line_items[0][quantity]', '1');
+  params.append('line_items[0][price_data][currency]', 'usd');
+  params.append('line_items[0][price_data][unit_amount]', String(Math.round(pack.price * 100)));
+  params.append('line_items[0][price_data][product_data][name]', pack.name);
+
+  const resp = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+  const body = await resp.json().catch(() => null);
+  if (!resp.ok) {
+    return errJson(request, 'Stripe error: ' + (body?.error?.message || resp.status), 502);
+  }
+  return json(request, { url: body.url, id: body.id });
+}
+
+// Stripe → us: verify signature (t=,v1=) and credit the pack on checkout.session.completed.
+async function verifyStripeSignature(payload, sigHeader, secret) {
+  if (!sigHeader) return false;
+  const parts = Object.fromEntries(sigHeader.split(',').map(p => {
+    const i = p.indexOf('=');
+    return [p.slice(0, i), p.slice(i + 1)];
+  }));
+  if (!parts.t || !parts.v1) return false;
+  const signedPayload = `${parts.t}.${payload}`;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload));
+  const hex = [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, '0')).join('');
+  return timingSafeEqual(hex, parts.v1);
+}
+
+async function handleStripeWebhook(request, env) {
+  if (!env.STRIPE_WEBHOOK_SECRET) return errJson(request, 'Webhook secret not configured.', 503);
+  const payload = await request.text();
+  const sig = request.headers.get('Stripe-Signature') || '';
+  const ok = await verifyStripeSignature(payload, sig, env.STRIPE_WEBHOOK_SECRET);
+  if (!ok) return errJson(request, 'Invalid signature.', 400);
+
+  let event;
+  try { event = JSON.parse(payload); } catch { return errJson(request, 'Bad JSON.', 400); }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data?.object || {};
+    const packId = session.metadata?.packId;
+    const accountId = session.metadata?.accountId || session.client_reference_id;
+    const pack = PACKS.find(p => p.id === packId);
+    if (!pack || !accountId) return json(request, { received: true, ignored: 'unknown_pack_or_account' });
+
+    // Idempotency: don't credit the same Stripe session twice.
+    const dedupeKey = `stripe_session:${session.id}`;
+    const already = await env.VOLTLINE_KV.get(dedupeKey);
+    if (already) return json(request, { received: true, duplicate: true });
+
+    const account = await getAccount(env, accountId);
+    if (!account) return json(request, { received: true, ignored: 'account_not_found' });
+
+    await creditPack(env, account, pack);
+    await env.VOLTLINE_KV.put(dedupeKey, '1', { expirationTtl: 60 * 60 * 24 * 90 });
+  }
+  return json(request, { received: true });
 }
 
 async function handleListBets(request, env) {
@@ -586,6 +729,8 @@ export default {
       if (pathname === '/api/me' && request.method === 'GET') return await handleMe(request, env);
       if (pathname === '/api/me/redeem' && request.method === 'POST') return await handleRedeem(request, env);
       if (pathname === '/api/me/deposit' && request.method === 'POST') return await handleDeposit(request, env);
+      if (pathname === '/api/checkout/create' && request.method === 'POST') return await handleCheckoutCreate(request, env);
+      if (pathname === '/api/stripe/webhook' && request.method === 'POST') return await handleStripeWebhook(request, env);
       if (pathname === '/api/bets' && request.method === 'GET') return await handleListBets(request, env);
       if (pathname === '/api/bets' && request.method === 'POST') return await handlePlaceBet(request, env);
       if (pathname === '/api/accounts/find' && request.method === 'GET') return await handleFindAccount(request, env, url);

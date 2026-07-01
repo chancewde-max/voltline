@@ -2096,8 +2096,23 @@ async function completePurchase() {
   const pack = state.pendingDeposit;
   if (!pack) return;
   try {
-    const { account } = await api('/api/me/deposit', { method: 'POST', body: JSON.stringify({ packId: pack.id }) });
-    applyAccount(account);
+    // Try real Stripe checkout first; fall back to mock /api/me/deposit if not configured.
+    try {
+      const { url } = await api('/api/checkout/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          packId: pack.id,
+          successUrl: location.origin + location.pathname + '?checkout=success',
+          cancelUrl: location.origin + location.pathname + '?checkout=cancel',
+        }),
+      });
+      window.location.href = url;
+      return;
+    } catch (stripeErr) {
+      if (!/not configured/i.test(stripeErr.message || '')) throw stripeErr;
+      const { account } = await api('/api/me/deposit', { method: 'POST', body: JSON.stringify({ packId: pack.id }) });
+      applyAccount(account);
+    }
   } catch (e) {
     errEl.textContent = e.message || 'Could not complete purchase.';
     return;
@@ -2359,11 +2374,17 @@ function closeRedeemModal() {
 
 async function confirmRedeem() {
   try {
-    const { account, redeemed } = await api('/api/me/redeem', { method: 'POST' });
+    const email = (state.currentUser?.email || '').trim();
+    const payoutEmail = prompt('Send the gift card / payout to which email?', email) || email;
+    if (!payoutEmail) return;
+    const { account, redeemed } = await api('/api/me/redeem', {
+      method: 'POST',
+      body: JSON.stringify({ email: payoutEmail }),
+    });
     applyAccount(account);
     closeRedeemModal();
     updateBalances();
-    showToast(`${money(redeemed)} submitted for redemption! Allow 3-5 business days.`);
+    showToast(`${money(redeemed)} sent to ${payoutEmail}! Check your inbox.`);
   } catch (e) {
     showToast(e.message || 'Could not redeem right now.');
   }
