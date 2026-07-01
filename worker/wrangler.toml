@@ -4,7 +4,7 @@ compatibility_date = "2024-11-01"
 
 # Created via `wrangler kv namespace create VOLTLINE_KV` — paste the returned id below.
 kv_namespaces = [
-  { binding = "VOLTLINE_KV", id = "REPLACE_WITH_KV_NAMESPACE_ID" }
+  { binding = "VOLTLINE_KV", id = "cbb037e2cc5d4e0cb764d1e8b5a2135e" }
 ]
 
 # Secrets (never put these here — set via `wrangler secret put <NAME>`):
