@@ -244,21 +244,26 @@ function buildOddsMap(events) {
   return map;
 }
 
-async function getOddsMap(env, sport) {
+async function getOddsMap(env, sport, debug = false) {
   const cacheKey = `oddscache:${sport}`;
   const cached = await env.VOLTLINE_KV.get(cacheKey, 'json');
-  if (cached) return cached;
+  if (cached) return debug ? { map: cached, debug: { source: 'cache' } } : cached;
   const sportKey = ODDS_SPORT_KEYS[sport] || ODDS_SPORT_KEYS[sport.toUpperCase()];
-  if (!sportKey || !env.ODDS_API_KEY) return {};
+  if (!sportKey) return debug ? { map: {}, debug: { reason: 'unknown_sport', sport } } : {};
+  if (!env.ODDS_API_KEY) return debug ? { map: {}, debug: { reason: 'missing_ODDS_API_KEY_secret' } } : {};
   try {
     const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${env.ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`;
-    const data = await fetch(url).then(r => r.json());
-    if (!Array.isArray(data)) return {};
+    const resp = await fetch(url);
+    const status = resp.status;
+    const data = await resp.json().catch(() => null);
+    if (!Array.isArray(data)) {
+      return debug ? { map: {}, debug: { reason: 'non_array_response', status, body: data } } : {};
+    }
     const map = buildOddsMap(data);
     await env.VOLTLINE_KV.put(cacheKey, JSON.stringify(map), { expirationTtl: ODDS_CACHE_TTL });
-    return map;
-  } catch {
-    return {};
+    return debug ? { map, debug: { source: 'live', status, count: data.length } } : map;
+  } catch (e) {
+    return debug ? { map: {}, debug: { reason: 'fetch_threw', message: String(e) } } : {};
   }
 }
 
@@ -531,9 +536,11 @@ async function handleBatchAccounts(request, env, url) {
   return json(request, { accounts: accounts.filter(Boolean).map(publicAccount) });
 }
 
-async function handleOdds(request, env, sport) {
-  const map = await getOddsMap(env, sport);
-  return json(request, { sport, map });
+async function handleOdds(request, env, sport, url) {
+  const debug = url.searchParams.get('debug') === '1';
+  const result = await getOddsMap(env, sport, debug);
+  if (debug) return json(request, { sport, ...result });
+  return json(request, { sport, map: result });
 }
 
 async function handleAdminLogin(request, env) {
@@ -594,7 +601,7 @@ export default {
       if (pathname === '/api/accounts/find' && request.method === 'GET') return await handleFindAccount(request, env, url);
       if (pathname === '/api/accounts/batch' && request.method === 'GET') return await handleBatchAccounts(request, env, url);
       if (pathname.startsWith('/api/odds/') && request.method === 'GET') {
-        return await handleOdds(request, env, decodeURIComponent(pathname.slice('/api/odds/'.length)));
+        return await handleOdds(request, env, decodeURIComponent(pathname.slice('/api/odds/'.length)), url);
       }
       if (pathname === '/api/admin/login' && request.method === 'POST') return await handleAdminLogin(request, env);
       if (pathname === '/api/admin/accounts' && request.method === 'GET') return await handleAdminAccounts(request, env);
