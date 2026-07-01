@@ -248,7 +248,7 @@ async function getOddsMap(env, sport) {
   const cacheKey = `oddscache:${sport}`;
   const cached = await env.VOLTLINE_KV.get(cacheKey, 'json');
   if (cached) return cached;
-  const sportKey = ODDS_SPORT_KEYS[sport];
+  const sportKey = ODDS_SPORT_KEYS[sport] || ODDS_SPORT_KEYS[sport.toUpperCase()];
   if (!sportKey || !env.ODDS_API_KEY) return {};
   try {
     const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${env.ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`;
