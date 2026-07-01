@@ -115,23 +115,72 @@ export function calcCombinedOdds(bets) {
   return dec >= 2 ? `+${Math.round(profit)}` : `-${Math.round(10000 / profit)}`;
 }
 
+// Human-readable label for a bet leg, matching what market it's actually in
+// (moneyline/spread/total legs all store the pick in teamAbbr, so the label
+// has to branch on market to avoid calling every leg "Moneyline").
+export function legLabel(leg) {
+  if (leg.market === 'spr') return `${leg.teamAbbr} ${leg.line > 0 ? '+' : ''}${leg.line} Spread`;
+  if (leg.market === 'ou') return `${leg.side === 'under' ? 'Under' : 'Over'} ${leg.line}`;
+  if (leg.market === 'prop') return leg.teamAbbr;
+  return `${leg.teamAbbr} Moneyline`;
+}
+
+// Grades one leg against its Final ESPN event. Only 'ml' (moneyline), 'spr'
+// (spread), and 'ou' (total) legs carry real, checkable outcomes; legacy legs
+// with no market default to 'ml' for backward compatibility with bets placed
+// before markets were tracked. 'prop' legs are decorative (there's no real
+// scoreboard data for things like "Rebounds O/U") and can never be verified,
+// so they're left out of resolution entirely by the caller.
+function gradeLeg(leg, ev) {
+  const comps = ev.competitions?.[0]?.competitors || [];
+  if (comps.length < 2) return null;
+  const [c0, c1] = comps;
+  const score0 = parseInt(c0.score || '0', 10);
+  const score1 = parseInt(c1.score || '0', 10);
+
+  if (leg.market === 'ou') {
+    const total = score0 + score1;
+    const line = parseFloat(leg.line);
+    if (Number.isNaN(line)) return null;
+    if (total === line) return 'push';
+    const overWon = total > line;
+    return (leg.side === 'over') === overWon ? 'won' : 'lost';
+  }
+
+  if (leg.market === 'spr') {
+    const team = comps.find(c => c.team?.abbreviation === leg.teamAbbr);
+    const opp = comps.find(c => c.team?.abbreviation !== leg.teamAbbr);
+    if (!team || !opp) return null;
+    const line = parseFloat(leg.line);
+    if (Number.isNaN(line)) return null;
+    const adjusted = parseInt(team.score || '0', 10) + line;
+    const oppScore = parseInt(opp.score || '0', 10);
+    if (adjusted === oppScore) return 'push';
+    return adjusted > oppScore ? 'won' : 'lost';
+  }
+
+  // Moneyline (default for legacy legs with no market field)
+  if (score0 === score1) return 'push';
+  const winnerAbbr = (score0 > score1 ? c0 : c1).team?.abbreviation;
+  return winnerAbbr === leg.teamAbbr ? 'won' : 'lost';
+}
+
 // Settle a placed bet against fetched ESPN events keyed by sport.
-// A leg wins if its team has the top score in a Final game. A bet wins only
-// when every leg wins (parlay rule); it stays 'pending' until all legs are
-// Final. Pure so it can be unit-tested and reused by the resolver loop.
+// A bet wins only when every (resolvable) leg wins or pushes; it stays
+// 'pending' until every resolvable leg's game is Final. Pure so it can be
+// unit-tested and reused by the resolver loop.
 export function resolveBetStatus(bet, sportEvents) {
   const legResults = bet.legs.map(leg => {
+    if (leg.market === 'prop') return 'push'; // unresolvable — never affects the outcome
     const events = sportEvents[leg.sport] || [];
     const ev = events.find(e => e.id === leg.gameId);
     if (!ev) return null;
     if (ev.status?.type?.description !== 'Final') return null;
-    const comps = ev.competitions?.[0]?.competitors || [];
-    const sorted = [...comps].sort((a, b) => parseInt(b.score || 0) - parseInt(a.score || 0));
-    const wonAbbr = sorted[0]?.team?.abbreviation;
-    return wonAbbr === leg.teamAbbr ? 'won' : 'lost';
+    return gradeLeg(leg, ev);
   });
   if (legResults.some(r => r === null)) return 'pending';
-  return legResults.some(r => r === 'lost') ? 'lost' : 'won';
+  if (legResults.some(r => r === 'lost')) return 'lost';
+  return legResults.every(r => r === 'push') ? 'push' : 'won';
 }
 
 export function calcPayout(stakeAmt, bets) {

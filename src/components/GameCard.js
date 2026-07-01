@@ -20,6 +20,7 @@ export default function GameCard({ game, featured, betSlip, onAddBet, style, rea
       opponent: opponent.abbr,
       odds,
       sport:    game.sport,
+      market:   'ml',
     });
   };
 

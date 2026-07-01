@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F, money } from '../constants';
+import { legLabel } from '../bets';
 import BottomNav from '../components/BottomNav';
 import Ticker from '../components/Ticker';
 
@@ -11,6 +12,7 @@ function StatusBadge({ status }) {
     pending: { label: 'PENDING', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' },
     won:     { label: 'WON',     color: C.green,   bg: C.greenGlow,             border: C.greenBorder },
     lost:    { label: 'LOST',    color: C.red,      bg: C.redGlow,               border: C.redBorder },
+    push:    { label: 'PUSH',    color: C.muted,    bg: 'rgba(255,255,255,0.06)', border: C.border },
   }[status] || { label: 'PENDING', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' };
 
   return (
@@ -45,7 +47,7 @@ function BetCard({ bet }) {
       {bet.legs.map((leg, i) => (
         <View key={i} style={s.legRow}>
           <View style={s.legLeft}>
-            <Text style={s.legTeam}>{leg.teamAbbr} Moneyline</Text>
+            <Text style={s.legTeam}>{legLabel(leg)}</Text>
             <Text style={s.legMeta}>{leg.sport} · vs {leg.opponent}</Text>
           </View>
           <Text style={[s.legOdds, parseInt(leg.odds) > 0 ? s.oddsPos : s.oddsNeg]}>{leg.odds}</Text>

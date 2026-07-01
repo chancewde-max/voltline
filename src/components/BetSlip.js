@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C, F, money } from '../constants';
-import { calcCombinedOdds, calcPayout } from '../bets';
+import { calcCombinedOdds, calcPayout, legLabel } from '../bets';
 
 // Shared bet slip: a docked summary bar + a slide-up detail/stake sheet.
 // Rendered by any screen that lets the user add bets (Live browser, For You).
@@ -71,7 +71,7 @@ export default function BetSlip({ betSlip, onAddBet, onPlaceBet, promoCash }) {
               {betSlip.map(bet => (
                 <View key={bet.id} style={s.slipRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={s.slipBetTeam}>{bet.teamAbbr} Moneyline</Text>
+                    <Text style={s.slipBetTeam}>{legLabel(bet)}</Text>
                     <Text style={s.slipBetMeta}>{bet.sport} · vs {bet.opponent}</Text>
                   </View>
                   <Text style={s.slipBetOdds}>{bet.odds}</Text>

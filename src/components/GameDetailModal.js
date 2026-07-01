@@ -95,7 +95,7 @@ export default function GameDetailModal({ game, visible, onClose, betSlip, onAdd
                     key={t.abbr}
                     style={[s.propRow, sel && s.propRowSel]}
                     disabled={game.isFinal}
-                    onPress={() => !game.isFinal && onAddBet({ id, gameId: game.id, teamAbbr: t.abbr, opponent: game.teams[1 - i].abbr, odds, sport: game.sport })}
+                    onPress={() => !game.isFinal && onAddBet({ id, gameId: game.id, teamAbbr: t.abbr, opponent: game.teams[1 - i].abbr, odds, sport: game.sport, market: 'ml' })}
                     activeOpacity={0.7}
                   >
                     <Text style={s.propLabel}>{t.abbr} to Win</Text>
@@ -125,7 +125,9 @@ export default function GameDetailModal({ game, visible, onClose, betSlip, onAdd
                       <TouchableOpacity
                         style={[s.propBtn, overSel && s.propBtnSel]}
                         disabled={game.isFinal}
-                        onPress={() => !game.isFinal && onAddBet({ id: `${game.id}-${prop}-o`, gameId: game.id, teamAbbr: `${prop} Over`, opponent: '', odds: overOdds, sport: game.sport })}
+                        onPress={() => !game.isFinal && onAddBet(isTotal
+                          ? { id: `${game.id}-${prop}-o`, gameId: game.id, teamAbbr: `${prop} Over`, opponent: '', odds: overOdds, sport: game.sport, market: 'ou', side: 'over', line }
+                          : { id: `${game.id}-${prop}-o`, gameId: game.id, teamAbbr: `${prop} Over`, opponent: '', odds: overOdds, sport: game.sport, market: 'prop' })}
                         activeOpacity={0.7}
                       >
                         <Text style={s.propBtnLabel}>Over</Text>
@@ -134,7 +136,9 @@ export default function GameDetailModal({ game, visible, onClose, betSlip, onAdd
                       <TouchableOpacity
                         style={[s.propBtn, underSel && s.propBtnSel]}
                         disabled={game.isFinal}
-                        onPress={() => !game.isFinal && onAddBet({ id: `${game.id}-${prop}-u`, gameId: game.id, teamAbbr: `${prop} Under`, opponent: '', odds: underOdds, sport: game.sport })}
+                        onPress={() => !game.isFinal && onAddBet(isTotal
+                          ? { id: `${game.id}-${prop}-u`, gameId: game.id, teamAbbr: `${prop} Under`, opponent: '', odds: underOdds, sport: game.sport, market: 'ou', side: 'under', line }
+                          : { id: `${game.id}-${prop}-u`, gameId: game.id, teamAbbr: `${prop} Under`, opponent: '', odds: underOdds, sport: game.sport, market: 'prop' })}
                         activeOpacity={0.7}
                       >
                         <Text style={s.propBtnLabel}>Under</Text>
@@ -166,7 +170,7 @@ export default function GameDetailModal({ game, visible, onClose, betSlip, onAdd
                     key={t.abbr}
                     style={[s.propRow, sel && s.propRowSel]}
                     disabled={game.isFinal}
-                    onPress={() => !game.isFinal && onAddBet({ id: spreadId, gameId: game.id, teamAbbr: t.abbr, opponent: game.teams[1 - i].abbr, odds: spreadOdds, sport: game.sport })}
+                    onPress={() => !game.isFinal && onAddBet({ id: spreadId, gameId: game.id, teamAbbr: t.abbr, opponent: game.teams[1 - i].abbr, odds: spreadOdds, sport: game.sport, market: 'spr', line: parseFloat(spreadLine) })}
                     activeOpacity={0.7}
                   >
                     <Text style={s.propLabel}>{t.abbr} {spreadLine}</Text>

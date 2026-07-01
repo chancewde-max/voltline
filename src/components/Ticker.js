@@ -56,8 +56,11 @@ export default function Ticker({ bosTime }) {
   const animRef     = useRef(null);
   const [halfW, setHalfW]     = useState(0);
   const [liveItems, setLiveItems] = useState([]);
+  const fetchingRef = useRef(false);
 
   const fetchTicker = useCallback(async () => {
+    if (fetchingRef.current) return; // skip overlapping polls if a fetch is still in flight
+    fetchingRef.current = true;
     try {
       const results = await Promise.all(LIVE_URLS.map(({ url, sport }) =>
         fetch(url).then(r => r.json()).then(d => ({ data: d, sport })).catch(() => null)
@@ -75,6 +78,7 @@ export default function Ticker({ bosTime }) {
       const items = buildTickerItems(events);
       if (items.length > 0) setLiveItems(items);
     } catch { /* keep existing items */ }
+    finally { fetchingRef.current = false; }
   }, []);
 
   useEffect(() => {

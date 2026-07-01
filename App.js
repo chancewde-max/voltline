@@ -67,27 +67,34 @@ export default function App() {
   const gameTime = `Q4 ${min}:${pad2(sec)}`;
 
   // ── Outcome resolution ──
+  const resolvingRef = useRef(false);
   useEffect(() => {
     const resolve = async () => {
+      if (resolvingRef.current) return; // skip overlapping runs if a fetch is still in flight
       const pending = placedBetsRef.current.filter(b => b.status === 'pending');
       if (pending.length === 0) return;
+      resolvingRef.current = true;
 
-      const sportsNeeded = [...new Set(pending.flatMap(b => b.legs.map(l => l.sport)))];
-      const sportEvents = {};
-      await Promise.all(sportsNeeded.map(async sport => {
-        const url = ESPN_URLS[sport];
-        if (!url) return;
-        try {
-          const data = await fetch(url).then(r => r.json());
-          sportEvents[sport] = data.events || [];
-        } catch {}
-      }));
+      try {
+        const sportsNeeded = [...new Set(pending.flatMap(b => b.legs.map(l => l.sport)))];
+        const sportEvents = {};
+        await Promise.all(sportsNeeded.map(async sport => {
+          const url = ESPN_URLS[sport];
+          if (!url) return;
+          try {
+            const data = await fetch(url).then(r => r.json());
+            sportEvents[sport] = data.events || [];
+          } catch {}
+        }));
 
-      setPlacedBets(prev => prev.map(bet => {
-        if (bet.status !== 'pending') return bet;
-        const status = resolveBetStatus(bet, sportEvents);
-        return status === 'pending' ? bet : { ...bet, status };
-      }));
+        setPlacedBets(prev => prev.map(bet => {
+          if (bet.status !== 'pending') return bet;
+          const status = resolveBetStatus(bet, sportEvents);
+          return status === 'pending' ? bet : { ...bet, status };
+        }));
+      } finally {
+        resolvingRef.current = false;
+      }
     };
 
     resolve();

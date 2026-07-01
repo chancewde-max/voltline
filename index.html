@@ -427,8 +427,9 @@
   .admin-bet-meta { display:flex; align-items:center; justify-content:space-between; }
   .admin-bet-stake { font-family:'Space Mono',monospace; font-size:11px; color:#4a5a7a; }
   .admin-bet-status { font-family:'Space Mono',monospace; font-size:10px; font-weight:700; }
-  .admin-bet-status.win { color:#00e676; }
-  .admin-bet-status.loss { color:#ff2952; }
+  .admin-bet-status.won { color:#00e676; }
+  .admin-bet-status.lost { color:#ff2952; }
+  .admin-bet-status.push { color:#b0bcd8; }
   .admin-bet-status.pending { color:#ffb02e; }
   .admin-stats-row { display:flex; gap:8px; margin-bottom:14px; }
   .admin-stat { flex:1; padding:12px 10px; background:rgba(10,10,26,1); border:1px solid rgba(255,255,255,.07); border-radius:10px; text-align:center; }
@@ -1014,6 +1015,36 @@
 </div><!-- /app -->
 
 <script>
+// ─── API ──────────────────────────────────────────────────────────────────────
+// Set this to your deployed Worker URL (see worker/README.md).
+const API_BASE = 'https://voltline-api.YOUR-SUBDOMAIN.workers.dev';
+const TOKEN_KEY = 'vl_token';
+let adminToken = null;
+
+function authHeaders() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: 'Bearer ' + token } : {};
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(options.headers || {}) },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed.');
+  return data;
+}
+
+// Syncs local UI state from the server's account record (the source of truth
+// for balance/gems/wins/losses/playthrough — never mutated locally anymore).
+function applyAccount(account) {
+  state.currentUser = account;
+  state.promoCash = account.balance ?? 0;
+  state.gems = account.gems ?? 0;
+  state.playthroughBatches = account.playthroughBatches || [];
+}
+
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
   screen: 'login', activeSport: 'NBA', showAll: false, allGames: [],
@@ -1027,15 +1058,6 @@ const state = {
   betsView: 'active',
   min: 2, sec: 34
 };
-
-// Mock users for admin panel (in real app this would be backend)
-const MOCK_USERS = [
-  { id:'u1', name:'Jordan Diaz',   initials:'JD', email:'jordan@voltline.bet', balance:3240.50, bets:231, wins:142, losses:89, joined:'Jan 2026', bg:'linear-gradient(135deg,#00c0c8,#0050ff)' },
-  { id:'u2', name:'Marcus Tan',    initials:'MT', email:'marcus@voltline.bet', balance:1890.00, bets:145, wins:98,  losses:47, joined:'Feb 2026', bg:'linear-gradient(135deg,#ff6a3d,#ff2952)' },
-  { id:'u3', name:'Sara Klein',    initials:'SK', email:'sara@voltline.bet',   balance:5120.75, bets:389, wins:241, losses:148,joined:'Nov 2025', bg:'linear-gradient(135deg,#00c0c8,#0050ff)' },
-  { id:'u4', name:'Devin Royce',   initials:'DR', email:'devin@voltline.bet',  balance:780.25,  bets:67,  wins:42,  losses:25, joined:'Mar 2026', bg:'linear-gradient(135deg,#7b5cff,#0050ff)' },
-  { id:'u5', name:'Priya Nair',    initials:'PN', email:'priya@voltline.bet',  balance:2650.00, bets:198, wins:121, losses:77, joined:'Dec 2025', bg:'linear-gradient(135deg,#00e676,#00c0c8)' },
-];
 
 const PACKS = [
   { id:'p1', price:1,   gems:100,   promo:1.00,  popular:false },
@@ -1081,92 +1103,23 @@ const FALLBACK_GAMES = {
 function money(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
 function pad2(n)  { return String(n).padStart(2,'0'); }
 
-// ── The Odds API ─────────────────────────────────────────────────────────────
-const ODDS_API_KEY = '311547d4bddf62ae644194bd9f3a9a5d';
+// ── Odds (proxied through our own API — the-odds-api key never touches the client) ──
 const ODDS_SPORT_KEYS = {
   NBA:'basketball_nba', NFL:'americanfootball_nfl', MLB:'baseball_mlb', NHL:'icehockey_nhl',
 };
-const TEAM_ABBR = {
-  'Atlanta Hawks':'ATL','Boston Celtics':'BOS','Brooklyn Nets':'BKN','Charlotte Hornets':'CHA',
-  'Chicago Bulls':'CHI','Cleveland Cavaliers':'CLE','Dallas Mavericks':'DAL','Denver Nuggets':'DEN',
-  'Detroit Pistons':'DET','Golden State Warriors':'GSW','Houston Rockets':'HOU','Indiana Pacers':'IND',
-  'Los Angeles Clippers':'LAC','Los Angeles Lakers':'LAL','Memphis Grizzlies':'MEM','Miami Heat':'MIA',
-  'Milwaukee Bucks':'MIL','Minnesota Timberwolves':'MIN','New Orleans Pelicans':'NOP','New York Knicks':'NYK',
-  'Oklahoma City Thunder':'OKC','Orlando Magic':'ORL','Philadelphia 76ers':'PHI','Phoenix Suns':'PHX',
-  'Portland Trail Blazers':'POR','Sacramento Kings':'SAC','San Antonio Spurs':'SAS','Toronto Raptors':'TOR',
-  'Utah Jazz':'UTA','Washington Wizards':'WAS',
-  'Arizona Cardinals':'ARI','Atlanta Falcons':'ATL','Baltimore Ravens':'BAL','Buffalo Bills':'BUF',
-  'Carolina Panthers':'CAR','Chicago Bears':'CHI','Cincinnati Bengals':'CIN','Cleveland Browns':'CLE',
-  'Dallas Cowboys':'DAL','Denver Broncos':'DEN','Detroit Lions':'DET','Green Bay Packers':'GB',
-  'Houston Texans':'HOU','Indianapolis Colts':'IND','Jacksonville Jaguars':'JAX','Kansas City Chiefs':'KC',
-  'Las Vegas Raiders':'LV','Los Angeles Chargers':'LAC','Los Angeles Rams':'LAR','Miami Dolphins':'MIA',
-  'Minnesota Vikings':'MIN','New England Patriots':'NE','New Orleans Saints':'NO','New York Giants':'NYG',
-  'New York Jets':'NYJ','Philadelphia Eagles':'PHI','Pittsburgh Steelers':'PIT','San Francisco 49ers':'SF',
-  'Seattle Seahawks':'SEA','Tampa Bay Buccaneers':'TB','Tennessee Titans':'TEN','Washington Commanders':'WSH',
-  'Arizona Diamondbacks':'ARI','Atlanta Braves':'ATL','Baltimore Orioles':'BAL','Boston Red Sox':'BOS',
-  'Chicago Cubs':'CHC','Chicago White Sox':'CWS','Cincinnati Reds':'CIN','Cleveland Guardians':'CLE',
-  'Colorado Rockies':'COL','Detroit Tigers':'DET','Houston Astros':'HOU','Kansas City Royals':'KC',
-  'Los Angeles Angels':'LAA','Los Angeles Dodgers':'LAD','Miami Marlins':'MIA','Milwaukee Brewers':'MIL',
-  'Minnesota Twins':'MIN','New York Mets':'NYM','New York Yankees':'NYY','Oakland Athletics':'OAK',
-  'Philadelphia Phillies':'PHI','Pittsburgh Pirates':'PIT','San Diego Padres':'SD','San Francisco Giants':'SF',
-  'Seattle Mariners':'SEA','St. Louis Cardinals':'STL','Tampa Bay Rays':'TB','Texas Rangers':'TEX',
-  'Toronto Blue Jays':'TOR','Washington Nationals':'WSH',
-  'Anaheim Ducks':'ANA','Boston Bruins':'BOS','Buffalo Sabres':'BUF','Calgary Flames':'CGY',
-  'Carolina Hurricanes':'CAR','Chicago Blackhawks':'CHI','Colorado Avalanche':'COL','Columbus Blue Jackets':'CBJ',
-  'Dallas Stars':'DAL','Detroit Red Wings':'DET','Edmonton Oilers':'EDM','Florida Panthers':'FLA',
-  'Los Angeles Kings':'LAK','Minnesota Wild':'MIN','Montreal Canadiens':'MTL','Nashville Predators':'NSH',
-  'New Jersey Devils':'NJD','New York Islanders':'NYI','New York Rangers':'NYR','Ottawa Senators':'OTT',
-  'Philadelphia Flyers':'PHI','Pittsburgh Penguins':'PIT','San Jose Sharks':'SJS','Seattle Kraken':'SEA',
-  'St. Louis Blues':'STL','Tampa Bay Lightning':'TBL','Toronto Maple Leafs':'TOR','Utah Hockey Club':'UTA',
-  'Vancouver Canucks':'VAN','Vegas Golden Knights':'VGK','Washington Capitals':'WSH','Winnipeg Jets':'WPG',
-};
-function fmtOdds(p) { return p > 0 ? '+'+p : ''+p; }
 const oddsCache = {};
 async function enrichGamesWithOdds(games, sport) {
-  const sportKey = ODDS_SPORT_KEYS[sport];
-  if (!ODDS_API_KEY || !sportKey) return games;
+  if (!ODDS_SPORT_KEYS[sport]) return games;
   const cached = oddsCache[sport];
-  if (cached && Date.now() - cached.ts < 300000) return mergeOdds(games, cached.data);
-  try {
-    const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`;
-    const data = await fetch(url).then(r => r.json());
-    if (!Array.isArray(data)) return games;
-    oddsCache[sport] = { ts: Date.now(), data };
-    return mergeOdds(games, data);
-  } catch { return games; }
-}
-function mergeOdds(games, events) {
-  const map = {};
-  for (const ev of events) {
-    const awayAbbr = TEAM_ABBR[ev.away_team], homeAbbr = TEAM_ABBR[ev.home_team];
-    if (!awayAbbr || !homeAbbr) continue;
-    const bk = ev.bookmakers?.[0]; if (!bk) continue;
-    const h2h = bk.markets?.find(m => m.key === 'h2h');
-    const spr = bk.markets?.find(m => m.key === 'spreads');
-    const tot = bk.markets?.find(m => m.key === 'totals');
-    const entry = {};
-    if (h2h) {
-      const a = h2h.outcomes.find(o => TEAM_ABBR[o.name] === awayAbbr);
-      const h = h2h.outcomes.find(o => TEAM_ABBR[o.name] === homeAbbr);
-      if (a && h) { entry.awayOdds = fmtOdds(a.price); entry.homeOdds = fmtOdds(h.price); }
-    }
-    if (spr) {
-      const a = spr.outcomes.find(o => TEAM_ABBR[o.name] === awayAbbr);
-      const h = spr.outcomes.find(o => TEAM_ABBR[o.name] === homeAbbr);
-      if (a && h) {
-        entry.awaySpreadLine = a.point > 0 ? '+'+a.point : ''+a.point;
-        entry.awaySpreadOdds = fmtOdds(a.price);
-        entry.homeSpreadLine = h.point > 0 ? '+'+h.point : ''+h.point;
-        entry.homeSpreadOdds = fmtOdds(h.price);
-      }
-    }
-    if (tot) {
-      const o = tot.outcomes.find(o => o.name === 'Over');
-      const u = tot.outcomes.find(o => o.name === 'Under');
-      if (o && u) { entry.totalLine = o.point; entry.overOdds = fmtOdds(o.price); entry.underOdds = fmtOdds(u.price); }
-    }
-    map[awayAbbr+'-'+homeAbbr] = entry;
-  }
+  const map = (cached && Date.now() - cached.ts < 300000) ? cached.map : await (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/odds/${encodeURIComponent(sport)}`);
+      const data = await res.json();
+      const m = data.map || {};
+      oddsCache[sport] = { ts: Date.now(), map: m };
+      return m;
+    } catch { return {}; }
+  })();
   return games.map(g => {
     const real = map[g.teams[0].abbr+'-'+g.teams[1].abbr];
     return real ? Object.assign({}, g, real) : g;
@@ -1297,8 +1250,7 @@ function updateBalances() {
   const v = money(state.promoCash);
   const a = document.getElementById('home-balance');   if (a) a.textContent = v;
   const b = document.getElementById('foryou-balance'); if (b) b.textContent = v;
-  // Update "in slips" total (sum of stakes for open slip)
-  const slipTotal = state.betSlip.length * 10; // placeholder; real stake from input
+  // Update "in slips" total (current stake input, if the slip is open)
   const stakeVal = parseFloat(document.getElementById('stake-input')?.value) || 0;
   const inSlipsAmt = stakeVal > 0 ? money(stakeVal) : '$0.00';
   const c = document.getElementById('foryou-in-slips'); if (c) c.textContent = inSlipsAmt;
@@ -1918,45 +1870,24 @@ function updatePayout() {
   placeBtn.className = 'place-btn' + (canPlace ? '' : ' disabled');
 }
 
-function placeSlip() {
+async function placeSlip() {
   const stakeEl  = document.getElementById('stake-input');
   const stakeNum = parseFloat(stakeEl.value) || 0;
   if (stakeNum <= 0 || stakeNum > state.promoCash) return;
 
-  const payout = calcPayout(stakeNum, state.betSlip);
-  const combinedOdds = calcCombinedOdds(state.betSlip);
-  const bet = {
-    id: Date.now().toString(),
-    legs: [...state.betSlip],
-    stake: stakeNum,
-    toWin: payout,
-    combinedOdds,
-    status: 'pending',
-    placedAt: Date.now(),
-  };
-  state.placedBets.push(bet);
-
-  state.promoCash = Math.max(0, state.promoCash - stakeNum);
-  // Deduct from oldest batch first (FIFO)
-  let toDeduct = stakeNum;
-  state.playthroughBatches = (state.playthroughBatches || []).map(b => {
-    if (toDeduct <= 0) return b;
-    const d = Math.min(b.remaining, toDeduct);
-    toDeduct -= d;
-    return { ...b, remaining: Math.max(0, b.remaining - d) };
-  }).filter(b => b.remaining > 0.001);
-  // Persist updated balance back to user account in localStorage
-  if (state.currentUser) {
-    const accounts = getAccounts();
-    const idx = accounts.findIndex(a => a.id === state.currentUser.id);
-    if (idx >= 0) {
-      accounts[idx].balance = state.promoCash;
-      accounts[idx].bets = (accounts[idx].bets || 0) + 1;
-      accounts[idx].playthroughBatches = state.playthroughBatches;
-      saveAccounts(accounts);
-      state.currentUser = accounts[idx];
-    }
+  const legs = [...state.betSlip];
+  try {
+    const { bet, account } = await api('/api/bets', {
+      method: 'POST',
+      body: JSON.stringify({ legs, stake: stakeNum }),
+    });
+    state.placedBets.push(bet);
+    applyAccount(account);
+  } catch (e) {
+    showToast(e.message || 'Could not place bet.');
+    return;
   }
+
   updateBalances();
   stakeEl.value = '';
   document.getElementById('payout-amt').textContent = '—';
@@ -1998,8 +1929,8 @@ function renderBets() {
     const d = new Date(bet.placedAt);
     const dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
     const timeStr = d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    const statusColor = { pending:'#f59e0b', won:'#00e676', lost:'#ff2952' }[bet.status] || '#f59e0b';
-    const statusBg    = { pending:'rgba(245,158,11,0.12)', won:'rgba(0,230,118,0.06)', lost:'rgba(255,41,82,0.06)' }[bet.status] || 'rgba(245,158,11,0.12)';
+    const statusColor = { pending:'#f59e0b', won:'#00e676', lost:'#ff2952', push:'#b0bcd8' }[bet.status] || '#f59e0b';
+    const statusBg    = { pending:'rgba(245,158,11,0.12)', won:'rgba(0,230,118,0.06)', lost:'rgba(255,41,82,0.06)', push:'rgba(176,188,216,0.08)' }[bet.status] || 'rgba(245,158,11,0.12)';
     const oddsColor   = isParlay ? '#a78bff' : '#00f0f5';
     const badgeBg     = isParlay ? 'rgba(167,139,255,0.08)' : 'rgba(0,240,245,0.08)';
     const badgeBdr    = isParlay ? 'rgba(167,139,255,0.25)' : 'rgba(0,240,245,0.12)';
@@ -2036,51 +1967,21 @@ function renderBets() {
 }
 
 // ─── Outcome resolution ───────────────────────────────────────────────────────
-const SPORT_ESPN_URLS = {
-  NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-  NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
-  MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
-  Soccer: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
-  NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-  UFC: 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
-  'World Cup': 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
-};
-async function resolveOutcomes() {
-  const pending = state.placedBets.filter(b => b.status === 'pending');
-  if (pending.length === 0) return;
-
-  const sportsNeeded = [...new Set(pending.flatMap(b => b.legs.map(l => l.sport)))];
-  const sportEvents = {};
-  await Promise.all(sportsNeeded.map(async sport => {
-    const url = SPORT_ESPN_URLS[sport];
-    if (!url) return;
-    try {
-      const data = await fetch(url).then(r => r.json());
-      sportEvents[sport] = data.events || [];
-    } catch {}
-  }));
-
-  let changed = false;
-  state.placedBets = state.placedBets.map(bet => {
-    if (bet.status !== 'pending') return bet;
-    const legResults = bet.legs.map(leg => {
-      const events = sportEvents[leg.sport] || [];
-      const ev = events.find(e => e.id === leg.gameId);
-      if (!ev || ev.status?.type?.description !== 'Final') return null;
-      const comps = ev.competitions?.[0]?.competitors || [];
-      const sorted = [...comps].sort((a, b) => parseInt(b.score || 0) - parseInt(a.score || 0));
-      const wonAbbr = sorted[0]?.team?.abbreviation;
-      return wonAbbr === leg.teamAbbr ? 'won' : 'lost';
-    });
-    if (legResults.some(r => r === null)) return bet;
-    const newStatus = legResults.some(r => r === 'lost') ? 'lost' : 'won';
-    changed = true;
-    return { ...bet, status: newStatus };
-  });
-
-  if (changed && state.screen === 'bets') renderBets();
+// Settlement (including spread/total grading) now happens server-side in the
+// Worker, which is the only place that can authoritatively credit balances.
+// This just polls for the current, server-resolved state.
+async function refreshBets() {
+  if (!state.currentUser) return;
+  try {
+    const { bets, account } = await api('/api/bets');
+    state.placedBets = bets;
+    applyAccount(account);
+  } catch { /* offline / not logged in — leave last known state */ }
+  updateBalances();
+  if (state.screen === 'bets') renderBets();
+  if (state.screen === 'account') renderAccount();
 }
-setInterval(resolveOutcomes, 60000);
+setInterval(refreshBets, 60000);
 
 // ─── Live ticker fetch ────────────────────────────────────────────────────────
 const TICKER_URLS = [
@@ -2181,7 +2082,7 @@ function goCheckout() {
   navigate('checkout');
 }
 
-function completePurchase() {
+async function completePurchase() {
   const card = document.getElementById('co-card').value.replace(/\s/g,'');
   const exp  = document.getElementById('co-exp').value;
   const cvv  = document.getElementById('co-cvv').value;
@@ -2194,22 +2095,12 @@ function completePurchase() {
   errEl.textContent = '';
   const pack = state.pendingDeposit;
   if (!pack) return;
-  state.promoCash += pack.promo;
-  state.gems      += pack.gems;
-  const newBatch = { id: 'pt_' + Date.now(), label: pack.name, total: pack.promo, remaining: pack.promo };
-  state.playthroughBatches = [...(state.playthroughBatches || []), newBatch];
-  // Persist to account
-  if (state.currentUser) {
-    const accounts = getAccounts();
-    const idx = accounts.findIndex(a => a.id === state.currentUser.id);
-    if (idx >= 0) {
-      accounts[idx].balance = state.promoCash;
-      accounts[idx].gems = state.gems;
-      accounts[idx].playthroughBatches = state.playthroughBatches;
-      accounts[idx].totalPlaythroughRequired = (accounts[idx].totalPlaythroughRequired || 0) + pack.promo;
-      saveAccounts(accounts);
-      state.currentUser = accounts[idx];
-    }
+  try {
+    const { account } = await api('/api/me/deposit', { method: 'POST', body: JSON.stringify({ packId: pack.id }) });
+    applyAccount(account);
+  } catch (e) {
+    errEl.textContent = e.message || 'Could not complete purchase.';
+    return;
   }
   updateBalances();
   navigate('account');
@@ -2262,11 +2153,15 @@ function onlineStatus(user) {
   return 'offline';
 }
 
-function renderFriends() {
-  const accounts = getAccounts();
+async function renderFriends() {
   const ids = getFriendIds();
-  const meId = state.currentUser?.id;
-  const friends = ids.map(id => accounts.find(a => a.id === id)).filter(Boolean);
+  let friends = [];
+  if (ids.length && state.currentUser) {
+    try {
+      const { accounts } = await api('/api/accounts/batch?ids=' + ids.map(encodeURIComponent).join(','));
+      friends = ids.map(id => accounts.find(a => a.id === id)).filter(Boolean);
+    } catch { /* offline — leave friends list as-is */ }
+  }
   const bgs = FRIEND_BG_POOL;
   document.getElementById('friends-list').innerHTML = friends.map((f, i) => {
     const status = onlineStatus(f);
@@ -2289,14 +2184,14 @@ function renderFriends() {
   document.getElementById('friend-count').textContent = friends.length + ' added';
 }
 
-function addFriend() {
+async function addFriend() {
   const input = document.getElementById('friend-input');
   const raw   = input.value.trim().replace(/^@/, '').toLowerCase();
   if (!raw) return;
-  const accounts = getAccounts();
-  const meId = state.currentUser?.id;
-  const found = accounts.find(a => a.id !== meId && (a.username?.toLowerCase() === raw || a.email?.toLowerCase() === raw || a.email?.split('@')[0].toLowerCase() === raw));
-  if (!found) {
+  let found;
+  try {
+    ({ account: found } = await api('/api/accounts/find?q=' + encodeURIComponent(raw)));
+  } catch {
     showFriendError('No user found with that username or email.');
     return;
   }
@@ -2328,32 +2223,31 @@ function renderAccount() {
     const handle = '@' + (user.username || user.email?.split('@')[0] || 'user');
     document.getElementById('profile-handle').textContent = handle;
     // VIP tier based on total bets placed
-    const totalBets = (user.bets || 0) + state.placedBets.length;
+    const totalBets = user.bets || 0;
     const tier = totalBets >= 500 ? 5 : totalBets >= 200 ? 4 : totalBets >= 100 ? 3 : totalBets >= 25 ? 2 : 1;
     document.getElementById('profile-vip').textContent = `VIP · TIER ${tier}`;
   }
 
-  // Stats: start from user's stored record + any new bets this session
-  const sessionWins   = state.placedBets.filter(b => b.result === 'won').length;
-  const sessionLosses = state.placedBets.filter(b => b.result === 'lost').length;
-  const wins   = (user?.wins   || 0) + sessionWins;
-  const losses = (user?.losses || 0) + sessionLosses;
+  // Stats come straight from the account record, which the server updates as
+  // each bet settles — no need to re-derive them from in-memory bet results.
+  const wins   = user?.wins   || 0;
+  const losses = user?.losses || 0;
   const total  = wins + losses;
   const wr     = total ? Math.round(wins / total * 100) : 0;
 
-  // Net lifetime from placed bets
-  const netSession = state.placedBets.reduce((sum, b) => {
+  // Net lifetime from settled bets (won credits toWin - stake, lost costs the stake, push is neutral)
+  const netLifetime = state.placedBets.reduce((sum, b) => {
     const stake = parseFloat(b.stake) || 0;
-    if (b.result === 'won') return sum + (parseFloat(b.toWin) - stake || 0);
-    if (b.result === 'lost') return sum - stake;
+    if (b.status === 'won') return sum + ((parseFloat(b.toWin) || 0) - stake);
+    if (b.status === 'lost') return sum - stake;
     return sum;
   }, 0);
   const netEl = document.getElementById('net-lifetime');
   if (netEl) {
-    const netStr = netSession >= 0 ? '+' + money(netSession) : '-' + money(Math.abs(netSession));
+    const netStr = netLifetime >= 0 ? '+' + money(netLifetime) : '-' + money(Math.abs(netLifetime));
     netEl.textContent = netStr;
-    netEl.className = netSession >= 0 ? 'net-green' : '';
-    netEl.style.color = netSession >= 0 ? '#00e676' : '#ff2952';
+    netEl.className = netLifetime >= 0 ? 'net-green' : '';
+    netEl.style.color = netLifetime >= 0 ? '#00e676' : '#ff2952';
   }
 
   document.getElementById('wins-num').textContent    = wins;
@@ -2373,90 +2267,55 @@ function renderWallet() {
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
-const ACCOUNTS_KEY = 'vl_accounts';
-function getAccounts() {
-  try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]'); } catch { return []; }
-}
-function saveAccounts(arr) { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(arr)); }
+// Accounts, passwords, and sessions all live server-side now (see worker/).
+// The client only ever holds a bearer session token.
 
-function doLogin() {
-  const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value;
+async function doLogin() {
+  const identifier = document.getElementById('login-user').value.trim();
+  const password   = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-error');
   errEl.textContent = '';
-  if (!user || !pass) { errEl.textContent = 'Please fill in all fields.'; return; }
-  const accounts = getAccounts();
-  const found = accounts.find(a => (a.email === user || a.username === user) && a.password === pass);
-  if (!found) { errEl.textContent = 'Invalid credentials. Try again.'; return; }
-  state.currentUser = found;
-  initMainApp();
-  navigate('home');
-  checkDailyReward(state.currentUser);
+  if (!identifier || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+  try {
+    const { token, account, reward } = await api('/api/login', {
+      method: 'POST', body: JSON.stringify({ identifier, password }),
+    });
+    localStorage.setItem(TOKEN_KEY, token);
+    applyAccount(account);
+    initMainApp();
+    navigate('home');
+    if (reward) showRewardModal(reward.streak, reward.gemsEarned, reward.cashEarned);
+  } catch (e) {
+    errEl.textContent = e.message || 'Invalid credentials. Try again.';
+  }
 }
 
-function doSignup() {
-  const name = document.getElementById('signup-name').value.trim();
+async function doSignup() {
+  const name  = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
-  const pass = document.getElementById('signup-pass').value;
+  const password = document.getElementById('signup-pass').value;
   const errEl = document.getElementById('signup-error');
   errEl.textContent = '';
-  if (!name || !email || !pass) { errEl.textContent = 'Please fill in all fields.'; return; }
-  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
-  const accounts = getAccounts();
-  if (accounts.find(a => a.email === email)) { errEl.textContent = 'Email already registered.'; return; }
-  const initials = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-  const newUser = { id:'u'+Date.now(), name, initials, email, username:email.split('@')[0], password:pass, balance:1000, gems:0, bets:0, wins:0, losses:0, loginStreak:0, lastLoginDate:null, playthroughNeeded:0, totalPlaythroughRequired:0, joined:new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}) };
-  accounts.push(newUser);
-  saveAccounts(accounts);
-  state.currentUser = newUser;
-  state.promoCash = 1000;
-  state.playthroughNeeded = 0;
-  state.gems = 0;
-  initMainApp();
-  navigate('home');
-  checkDailyReward(state.currentUser);
+  if (!name || !email || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  try {
+    const { token, account, reward } = await api('/api/signup', {
+      method: 'POST', body: JSON.stringify({ name, email, password }),
+    });
+    localStorage.setItem(TOKEN_KEY, token);
+    applyAccount(account);
+    initMainApp();
+    navigate('home');
+    if (reward) showRewardModal(reward.streak, reward.gemsEarned, reward.cashEarned);
+  } catch (e) {
+    errEl.textContent = e.message || 'Could not create account.';
+  }
 }
 
 // ─── Daily Login Rewards (Sweepstakes) ────────────────────────────────────────
-function todayStr() {
-  const d = new Date();
-  return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
-}
-
-function checkDailyReward(user) {
-  const today = todayStr();
-  if (user.lastLoginDate === today) return; // already claimed today
-
-  const yesterday = (() => {
-    const d = new Date(Date.now() - 86400000);
-    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
-  })();
-
-  const streak = user.lastLoginDate === yesterday ? (user.loginStreak || 0) + 1 : 1;
-  const gemsEarned = 1000;
-  const cashEarned = streak % 7 === 0 ? 1.00 : 0;
-
-  state.gems      += gemsEarned;
-  state.promoCash += cashEarned;
-  if (cashEarned > 0) {
-    const loginBatch = { id: 'pt_' + Date.now(), label: 'Login Bonus', total: cashEarned, remaining: cashEarned };
-    state.playthroughBatches = [...(state.playthroughBatches || []), loginBatch];
-    user.totalPlaythroughRequired = (user.totalPlaythroughRequired || 0) + cashEarned;
-  }
-
-  user.gems              = state.gems;
-  user.balance           = state.promoCash;
-  user.loginStreak       = streak;
-  user.lastLoginDate     = today;
-  user.playthroughBatches = state.playthroughBatches || [];
-  state.currentUser      = user;
-
-  const accounts = getAccounts();
-  const idx = accounts.findIndex(a => a.id === user.id);
-  if (idx >= 0) { accounts[idx] = user; saveAccounts(accounts); }
-
-  showRewardModal(streak, gemsEarned, cashEarned);
-}
+// Streak/reward math is computed server-side on login/signup (see worker/) so it
+// can't be replayed by clearing localStorage; this just renders whatever the
+// server returned.
 
 function showRewardModal(streak, gems, cash) {
   document.getElementById('reward-day').textContent = `Day ${streak} Streak!`;
@@ -2498,48 +2357,33 @@ function closeRedeemModal() {
   document.getElementById('redeem-overlay').classList.add('hidden');
 }
 
-function confirmRedeem() {
-  const amount = state.promoCash;
-  state.promoCash = 0;
-  state.playthroughBatches = [];
-  if (state.currentUser) {
-    const accounts = getAccounts();
-    const idx = accounts.findIndex(a => a.id === state.currentUser.id);
-    if (idx >= 0) {
-      accounts[idx].balance = 0;
-      accounts[idx].playthroughBatches = [];
-      saveAccounts(accounts);
-      state.currentUser = accounts[idx];
-    }
+async function confirmRedeem() {
+  try {
+    const { account, redeemed } = await api('/api/me/redeem', { method: 'POST' });
+    applyAccount(account);
+    closeRedeemModal();
+    updateBalances();
+    showToast(`${money(redeemed)} submitted for redemption! Allow 3-5 business days.`);
+  } catch (e) {
+    showToast(e.message || 'Could not redeem right now.');
   }
-  closeRedeemModal();
-  updateBalances();
-  showToast(`${money(amount)} submitted for redemption! Allow 3-5 business days.`);
 }
 
-function adminAccess() {
+async function adminAccess() {
   const pw = prompt('Admin password:');
-  if (pw !== 'voltline2026') { alert('Access denied.'); return; }
-  navigate('admin');
+  if (!pw) return;
+  try {
+    const { token } = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: pw }) });
+    adminToken = token;
+    navigate('admin');
+  } catch {
+    alert('Access denied.');
+  }
 }
 
 function initMainApp() {
   const user = state.currentUser;
   if (user) {
-    // Load user's balance and stats into live state
-    state.promoCash  = user.balance  ?? 1000;
-    state.gems       = user.gems     ?? 0;
-    state.wins       = user.wins     ?? 0;
-    state.losses     = user.losses   ?? 0;
-    // Load playthrough batches (migrate legacy single-tracker if needed)
-    if (user.playthroughBatches) {
-      state.playthroughBatches = user.playthroughBatches;
-    } else if ((user.playthroughNeeded || 0) > 0) {
-      state.playthroughBatches = [{ id: 'pt_legacy', label: 'Previous Deposit', total: user.totalPlaythroughRequired || user.playthroughNeeded, remaining: user.playthroughNeeded }];
-    } else {
-      state.playthroughBatches = [];
-    }
-    state.placedBets = [];  // fresh session; history tied to account
     document.getElementById('home-avatar').textContent = user.initials;
     document.getElementById('live-avatar').textContent = user.initials;
     // Streak badge
@@ -2551,18 +2395,25 @@ function initMainApp() {
   updateBalances();
   renderPacks();
   renderFriends();
+  refreshBets(); // loads this account's real bet history + resolves any pending bets
   fetchGames('NBA');
   renderForYou();
 }
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
-function renderAdmin() {
-  const accounts = [...MOCK_USERS, ...getAccounts()];
-  const allBets = state.placedBets;
-  // Stats
-  const totalVol = allBets.reduce((s, b) => s + (parseFloat(b.stake) || 0), 0);
+async function renderAdmin() {
+  if (!adminToken) return;
+  let accounts = [], bets = [], totalVol = 0;
+  try {
+    ({ accounts } = await api('/api/admin/accounts', { headers: { Authorization: 'Bearer ' + adminToken } }));
+    ({ bets, totalVolume: totalVol } = await api('/api/admin/bets', { headers: { Authorization: 'Bearer ' + adminToken } }));
+  } catch {
+    navigate('login');
+    return;
+  }
+
   document.getElementById('adm-total-users').textContent = accounts.length;
-  document.getElementById('adm-total-bets').textContent = allBets.length;
+  document.getElementById('adm-total-bets').textContent = bets.length;
   document.getElementById('adm-total-vol').textContent = money(totalVol);
   // Users list
   document.getElementById('admin-users-list').innerHTML = accounts.map(u => `
@@ -2575,19 +2426,18 @@ function renderAdmin() {
       <div class="admin-user-bal">${money(u.balance||0)}</div>
     </div>`).join('');
   // Bets list
-  if (allBets.length === 0) {
+  if (bets.length === 0) {
     document.getElementById('admin-bets-list').innerHTML = '<div style="font-family:\'Space Mono\',monospace;font-size:11px;color:#2a3a5a;padding:12px 0">No bets placed yet.</div>';
     return;
   }
-  document.getElementById('admin-bets-list').innerHTML = allBets.map((b, i) => {
+  document.getElementById('admin-bets-list').innerHTML = bets.map((b, i) => {
     const legs = b.legs || [];
-    const status = b.result === 'win' ? 'win' : b.result === 'loss' ? 'loss' : 'pending';
     return `<div class="admin-bet-row">
-      <div class="admin-bet-id">#BET-${String(i+1).padStart(4,'0')} · ${state.currentUser?.name || 'User'}</div>
+      <div class="admin-bet-id">#BET-${String(i+1).padStart(4,'0')} · ${b.accountName || 'User'}</div>
       <div class="admin-bet-legs">${legs.map(l => l.teamAbbr + ' ' + l.odds).join(' + ') || 'Bet'}</div>
       <div class="admin-bet-meta">
         <span class="admin-bet-stake">Stake: ${money(parseFloat(b.stake)||0)}</span>
-        <span class="admin-bet-status ${status}">${status.toUpperCase()}</span>
+        <span class="admin-bet-status ${b.status}">${b.status.toUpperCase()}</span>
       </div>
     </div>`;
   }).join('');
@@ -2635,6 +2485,19 @@ initBgAnim();
 document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
 document.getElementById('login-user').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
 document.getElementById('signup-pass').addEventListener('keydown', e => { if (e.key==='Enter') doSignup(); });
+
+// Resume an existing session (stored token) instead of forcing a fresh login.
+(async function resumeSession() {
+  if (!localStorage.getItem(TOKEN_KEY)) return;
+  try {
+    const { account } = await api('/api/me');
+    applyAccount(account);
+    initMainApp();
+    navigate('home');
+  } catch {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+})();
 </script>
 </body>
 </html>
